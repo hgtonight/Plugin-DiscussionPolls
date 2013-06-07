@@ -82,4 +82,64 @@ class DiscussionPolls extends Gdn_Plugin
 	public function Setup() {
 	
 	}
+	
+	// TODO: Document
+	protected function Structure() {
+		$Database = Gdn::Database();
+		$SQL = $Database->SQL();
+		$Construct = $Database->Structure();
+
+		$Construct->Table('DP_Polls');
+		$Construct
+		   ->PrimaryKey('PollID')
+		   ->Column('DiscussionID', 'int', TRUE, 'key')
+		   ->Column('Text', 'varchar(140)')
+		   ->Column('Open', 'tinyint(1)', '1');
+		   
+		$Construct->Table('DP_Questions');
+		$Construct
+		   ->PrimaryKey('QuestionID')
+		   ->Column('PollID', 'int', TRUE, 'key')
+		   ->Column('Text', 'varchar(140)')
+		   ->Column('Count', 'int', '0');
+		   
+		$Construct->Table('DP_Answers');
+		$Construct
+		   ->PrimaryKey('AnswerID')
+		   ->Column('QuestionID', 'int', TRUE, 'key')
+		   ->Column('PollID', 'int', TRUE, 'key')
+		   ->Column('Text', 'varchar(140)')
+		   ->Column('Score', 'int', '0');
+	}
+	
+	->Column('Name', 'varchar(50)', FALSE, 'key')
+   ->Column('Password', 'varbinary(100)') // keep this longer because of some imports.
+	->Column('HashMethod', 'varchar(10)', TRUE)
+   ->Column('Photo', 'varchar(255)', NULL)
+   ->Column('About', 'text', TRUE)
+   ->Column('Email', 'varchar(200)', FALSE, 'index')
+   ->Column('ShowEmail', 'tinyint(1)', '0')
+   ->Column('Gender', array('m', 'f'), 'm')
+   ->Column('CountVisits', 'int', '0')
+   ->Column('CountInvitations', 'int', '0')
+   ->Column('CountNotifications', 'int', NULL)
+   ->Column('InviteUserID', 'int', TRUE)
+   ->Column('DiscoveryText', 'text', TRUE)
+   ->Column('Preferences', 'text', TRUE)
+   ->Column('Permissions', 'text', TRUE)
+   ->Column('Attributes', 'text', TRUE)
+   ->Column('DateSetInvitations', 'datetime', TRUE)
+   ->Column('DateOfBirth', 'datetime', TRUE)
+   ->Column('DateFirstVisit', 'datetime', TRUE)
+   ->Column('DateLastActive', 'datetime', TRUE)
+   ->Column('LastIPAddress', 'varchar(15)', TRUE)
+   ->Column('DateInserted', 'datetime')
+   ->Column('InsertIPAddress', 'varchar(15)', TRUE)
+   ->Column('DateUpdated', 'datetime', TRUE)
+   ->Column('UpdateIPAddress', 'varchar(15)', TRUE)
+   ->Column('HourOffset', 'int', '0')
+	->Column('Score', 'float', NULL)
+   ->Column('Admin', 'tinyint(1)', '0')
+   ->Column('Banned', 'tinyint(1)', '0') // 1 means banned, otherwise not banned
+   ->Column('Deleted', 'tinyint(1)', '0')
 }
