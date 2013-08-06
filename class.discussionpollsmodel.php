@@ -7,7 +7,10 @@ class DiscussionPollsModel extends Gdn_Model {
 	public function  __construct($Name = '') {
 		parent::__construct('DiscussionPolls');
 	}
+	
 	public function Get($DiscussionID) {}
+	
 	public function Save($FormPostValues) {}
+	
 	public function UpdateResults($ReplyCommentID) {}
 }
