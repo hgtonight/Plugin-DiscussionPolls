@@ -8,9 +8,15 @@ class DiscussionPollsModel extends Gdn_Model {
 		parent::__construct('DiscussionPolls');
 	}
 	
-	public function Get($DiscussionID) {}
+	public function Exists($ID) {}
+	
+	public function HasResponses($ID) {}
+	
+	public function Get($ID) {}
 	
 	public function Save($FormPostValues) {}
 	
-	public function UpdateResults($ReplyCommentID) {}
+	public function UpdateResults($ID) {}
+	
+	public function Delete($ID) {}
 }

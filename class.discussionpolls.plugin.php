@@ -19,6 +19,19 @@ class DiscussionPolls extends Gdn_Plugin
 	}
 	
 	// TODO: Document
+	// create a fake controller for poll
+	public function PluginController_DiscussionPolls_Create($Sender) {
+		$this->Dispatch($Sender, $Sender->RequestArgs);
+	}
+	
+	// TODO: Document
+	// Will be used for the settings page if there is one
+	public function Controller_Index($Sender) {
+		echo 'I did something on the fake controller!';
+		$Sender->Render();
+	}
+	
+	// TODO: Document
 	// Add css and js to the discussion controller 
 	public function DiscussionController_Render_Before($Sender) {
 		// Add resources
@@ -37,13 +50,14 @@ class DiscussionPolls extends Gdn_Plugin
 		// Make sure event argument type is Discussion
 			
 			// Insert Poll
-			
+			$this->_RenderPollSubmissionForm();
 	}
 	
 	// TODO: Document
 	// Render poll in first post of discussion in 2.1b1 
 	public function DiscussionController_AfterDiscussionBody_Handler($Sender) {
 		// Insert Poll
+		$this->_RenderPollSubmissionForm();
 	}
 	
 
@@ -54,45 +68,86 @@ class DiscussionPolls extends Gdn_Plugin
 		// Make sure we can add polls
 		$Sender->Permission('Plugins.DiscussionPolls.Add','',FALSE);
 		// render check box
-		$Sender->EventArguments['Options'] .= '<li>'.$Sender->Form->CheckBox('DiscussionPoll', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)).'</li>';
+		$Sender->EventArguments['Options'] .= '<li>'.$Sender->Form->CheckBox('AttachDiscussionPoll', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)).'</li>';
+		
+		// TODO: Load any existing poll data
+		//$Sender->Form->SetValue('DiscussionPolls', $DiscussionPollsResult);
+		
+		// TODO: Render poll inputs as read only if there are responses recorded
 		
 		// TODO: Put this stuff in a theme?
 		// render poll creation form
 		echo '<div class="P" id="DiscussionPollsForm">';
+			//$Sender->Form->InputPrefix = 'Discussion';
 			echo $Sender->Form->Label('Discussion Poll Title', 'DiscussionPollTitle');
 			echo Wrap($Sender->Form->TextBox('DiscussionPollTitle', array('maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
 			
-			echo Anchor(' ', '/plugin/discussionpolls/question/add', array('id' => 'DPPreviousQuestion'));
+			echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DPPreviousQuestion'));
 			// render the first poll question form
 			echo '<fieldset id="DPQuestion0" class="DiscussionPollsQuestion">';
-			echo $Sender->Form->Label('Question #1', 'DiscussionPollQuestion');
-			echo Wrap($Sender->Form->TextBox('DiscussionPollQuestion[]', array('id' => 'DiscussionPollQuestion0', 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+			echo $Sender->Form->Label('Question #1', 'DiscussionPollsQuestions');
+			echo Wrap($Sender->Form->TextBox('DiscussionPollsQuestions[]', array('id' => 'DiscussionPollsQuestions0', 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
 			
 			// start with two options 
 			for($i = 0; $i < 2; $i++) {
-				echo $Sender->Form->Label('Option #'.($i + 1), 'DiscussionPollOption0.'.$i);
-				echo Wrap($Sender->Form->TextBox('DiscussionPollOption0[]', array('id' => 'DiscussionPollOption0.'.$i, 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+				echo $Sender->Form->Label('Option #'.($i + 1), 'DiscussionPollsOptions0.'.$i);
+				echo Wrap($Sender->Form->TextBox('DiscussionPollsOptions0[]', array('id' => 'DiscussionPollsOptions0.'.$i, 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
 			}
 			echo '</fieldset>';
-			echo Anchor('Add a Question', '/plugin/discussionpolls/question/add', array('id' => 'DPNextQuestion'));
-			echo Anchor('Add an option', '/plugin/discussionpolls/option/add', array('id' => 'DPAddOption'));
+			echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
+			echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DPAddOption'));
 		echo '</div>';
 	}
 
 	// TODO: Document
-	// Render form to create poll on new discussion page in 2.x
-	public function PostController_AfterDiscussionSave_Handler($Sender) {
-		echo '<pre>'; var_dump($Sender->Form->FormValues()); echo '</pre>';
+	// Save poll when saving a discussion.
+	public function DiscussionModel_AfterSaveDiscussion_Handler($Sender) {
+		// Needed no matter what
+		$DPModel = new DiscussionPollsModel();
+		$DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
+		$FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
+		
+		echo '<pre>'; var_dump($Sender->EventArguments); echo '</pre>';
+		
+		// Unchecking the poll option will remove the poll if it exists
+		if(!GetValue('AttachDiscussionPoll', $FormPostValues)) {
+			// Check for existing poll
+			if($DPModel->Exists($DiscussionID)) {
+				// Delete existing poll
+				$DPModel->Delete($DiscussionID);
+			}
+			// Don't continue either way
+			return;
+		}
 		die();
+		
+		// Check to see if there are already poll responses; exit
+		if($DPModel->HasResponses($DiscussionID)) {
+			return;
+		}
 		// Make sure we can add polls
 		$Sender->Permission('Plugins.DiscussionPolls.Add','',FALSE);
+
+		// validate form fields
 		
-		// parse form fields
-		
+
 		// save poll data
+      
 	}
+   
 	// TODO: Document
-	protected function _RenderDiscussionPoll($Sender) {
+	// Remove attach poll when discussion is deleted
+	public function DiscussionModel_DeleteDiscussion_Handler($Sender) {
+		// Get discussionID that is being deleted
+		$DiscussionID = $Sender->EventArguments['DiscussionID'];
+
+		// Delete via model
+		$DPModel = new DiscussionPollsModel();
+		$DPModel->Delete($DiscussionID);
+	}
+   
+	// TODO: Document
+	protected function _RenderPollSubmissionForm($Sender) {
 		// Render the poll if it exists
 		
 			// Has the user voted?

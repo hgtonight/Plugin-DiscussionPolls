@@ -4,10 +4,10 @@ jQuery(document).ready(function($){
 	$('#DiscussionPollsForm').hide();
 	
 	// Uncheck attach poll initially
-	$('#Form_DiscussionPoll').prop('checked', false);
+	$('#Form_AttachDiscussionPoll').prop('checked', false);
 	
 	// Show/hide the form when the attach poll box is checked
-	$('#Form_DiscussionPoll').change( function(event) {
+	$('#Form_AttachDiscussionPoll').change( function(event) {
 		event.preventDefault();
 		$('#DiscussionPollsForm').slideToggle();
 	});
@@ -50,7 +50,7 @@ jQuery(document).ready(function($){
 		var nextQuestionNum = parseInt(questionNum) + 1;
 		if($('#DPQuestion' + nextQuestionNum).length == 0) {
 			// Add another question field since there are no others
-			$('#DPQuestion' + questionNum).after('<fieldset id="DPQuestion' + nextQuestionNum + '" class="DiscussionPollsQuestion"><label for="Form_DiscussionPollQuestion">Question #' + (nextQuestionNum + 1) + '</label><div class="TextBoxWrapper"><input id="DiscussionPollQuestion' + nextQuestionNum + '" name="Discussion/DiscussionPollQuestion[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollOption' + nextQuestionNum + '-dot-0">Option #1</label><div class="TextBoxWrapper"><input id="DiscussionPollOption' + nextQuestionNum + '.0" name="Discussion/DiscussionPollOption' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollOption' + nextQuestionNum + '-dot-1">Option #2</label><div class="TextBoxWrapper"><input id="DiscussionPollOption' + nextQuestionNum + '.1" name="Discussion/DiscussionPollOption' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div></fieldset>');
+			$('#DPQuestion' + questionNum).after('<fieldset id="DPQuestion' + nextQuestionNum + '" class="DiscussionPollsQuestion"><label for="Form_DiscussionPollsQuestions">Question #' + (nextQuestionNum + 1) + '</label><div class="TextBoxWrapper"><input id="DiscussionPollsQuestions' + nextQuestionNum + '" name="Discussion/DiscussionPollsQuestions[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollsOptions' + nextQuestionNum + '-dot-0">Option #1</label><div class="TextBoxWrapper"><input id="DiscussionPollsOptions' + nextQuestionNum + '.0" name="Discussion/DiscussionPollsOptions' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollsOptions' + nextQuestionNum + '-dot-1">Option #2</label><div class="TextBoxWrapper"><input id="DiscussionPollsOptions' + nextQuestionNum + '.1" name="Discussion/DiscussionPollsOptions' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div></fieldset>');
 			$('#DPQuestion' + nextQuestionNum).hide();
 		}
 		
