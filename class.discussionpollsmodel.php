@@ -8,7 +8,16 @@ class DiscussionPollsModel extends Gdn_Model {
 		parent::__construct('DiscussionPolls');
 	}
 	
-	public function Exists($ID) {}
+	public function Exists($ID) {
+		$this->SQL
+			->Select('p.PollID')
+			->From('DiscussionPolls p')
+			->Where('p.PollID', $ID);
+		
+		$Data = $this->SQL->Get();
+		echo '<pre>'; var_dump($Data); echo '</pre>';
+		return TRUE;
+	}
 	
 	public function HasResponses($ID) {}
 	

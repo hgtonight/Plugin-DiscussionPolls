@@ -27,6 +27,9 @@ class DiscussionPolls extends Gdn_Plugin
 	// TODO: Document
 	// Will be used for the settings page if there is one
 	public function Controller_Index($Sender) {
+		$DPModel = new DiscussionPollsModel();
+		
+		$DPModel->Exists(1);
 		echo 'I did something on the fake controller!';
 		$Sender->Render();
 	}
@@ -123,16 +126,14 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		// Check to see if there are already poll responses; exit
 		if($DPModel->HasResponses($DiscussionID)) {
+			// TODO: Show a message saying it can't be edited
 			return;
 		}
 		// Make sure we can add polls
 		$Sender->Permission('Plugins.DiscussionPolls.Add','',FALSE);
 
-		// validate form fields
-		
-
-		// save poll data
-      
+		// save poll form fields
+		$DPModel->Save($FormPostValues);
 	}
    
 	// TODO: Document
@@ -176,7 +177,7 @@ class DiscussionPolls extends Gdn_Plugin
 		$SQL = $Database->SQL();
 		$Construct = $Database->Structure();
 
-		$Construct->Table('DP_Polls');
+		$Construct->Table('DiscussionPolls');
 		$Construct
 		   ->PrimaryKey('PollID')
 		   ->Column('DiscussionID', 'int', TRUE, 'key')
@@ -184,7 +185,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->Column('Open', 'tinyint(1)', '1')
 		   ->Set();
 		   
-		$Construct->Table('DP_Questions');
+		$Construct->Table('DiscussionPollQuestions');
 		$Construct
 		   ->PrimaryKey('QuestionID')
 		   ->Column('PollID', 'int', TRUE, 'key')
@@ -192,7 +193,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->Column('Count', 'int', '0')
 		   ->Set();
 		   
-		$Construct->Table('DP_Options');
+		$Construct->Table('DiscussionPollQuestionOptions');
 		$Construct
 		   ->PrimaryKey('OptionID')
 		   ->Column('QuestionID', 'int', TRUE, 'key')
@@ -201,7 +202,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->Column('Score', 'int', '0')
 		   ->Set();
 		   
-		$Construct->Table('DP_Results');
+		$Construct->Table('DiscussionPollAnswers');
 		$Construct
 		   ->PrimaryKey('PollID')
 		   ->Column('QuestionID', 'int', TRUE, 'key')
