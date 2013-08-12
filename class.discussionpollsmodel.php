@@ -14,18 +14,21 @@ class DiscussionPollsModel extends Gdn_Model {
 			->From('DiscussionPolls p')
 			->Where('p.PollID', $ID);
 		
-		$Data = $this->SQL->Get();
-		echo '<pre>'; var_dump($Data); echo '</pre>';
-		return TRUE;
+		$Data = $this->SQL->Get()->Result();
+		// echo '<pre>'; var_dump($Data); echo '</pre>';
+		return !empty($Data);
 	}
 	
 	public function HasResponses($ID) {}
 	
+	/**
+	* Gets a poll object
+	*/
 	public function Get($ID) {}
 	
 	public function Save($FormPostValues) {}
 	
-	public function UpdateResults($ID) {}
+	public function SaveResult($FormPostValues) {}
 	
 	public function Delete($ID) {}
 }

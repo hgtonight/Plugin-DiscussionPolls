@@ -20,7 +20,7 @@ class DiscussionPolls extends Gdn_Plugin
 	
 	// TODO: Document
 	// create a fake controller for poll
-	public function PluginController_DiscussionPolls_Create($Sender) {
+	public function DiscussionController_Poll_Create($Sender) {
 		$this->Dispatch($Sender, $Sender->RequestArgs);
 	}
 	
@@ -29,7 +29,7 @@ class DiscussionPolls extends Gdn_Plugin
 	public function Controller_Index($Sender) {
 		$DPModel = new DiscussionPollsModel();
 		
-		$DPModel->Exists(1);
+		echo $DPModel->Exists(1);
 		echo 'I did something on the fake controller!';
 		$Sender->Render();
 	}
@@ -204,7 +204,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   
 		$Construct->Table('DiscussionPollAnswers');
 		$Construct
-		   ->PrimaryKey('PollID')
+		   ->Column('PollID', 'int', TRUE, 'key')
 		   ->Column('QuestionID', 'int', TRUE, 'key')
 		   ->Column('UserID', 'int', TRUE, 'key')
 		   ->Column('OptionID', 'int', TRUE, 'key')
