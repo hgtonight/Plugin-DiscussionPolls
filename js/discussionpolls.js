@@ -1,10 +1,24 @@
 /* Copyright 2013 Zachary Doll All rights reserved. Do not distribute.*/
 jQuery(document).ready(function($){
-	// Hide the form initially
-	$('#DiscussionPollsForm').hide();
-	
-	// Uncheck attach poll initially
-	$('#Form_AttachDiscussionPoll').prop('checked', false);
+	// Determine if there is already data in the poll which implies th
+	var title = '';
+	title = $('#Form_DiscussionPollTitle').val();
+	if(title == '') {
+		// Hide the form initially
+		$('#DiscussionPollsForm').hide();
+		
+		// Uncheck attach poll initially
+		$('#Form_AttachDiscussionPoll').prop('checked', false);
+	}
+	else {
+		// Hide the extra questions and make the buttons make sense
+		if($('fieldset.DiscussionPollsQuestion').length > 1) {
+			// Hide all but the first question form
+			$('fieldset.DiscussionPollsQuestion:gt(0)').hide();
+			
+			$('#DPNextQuestion').text('Next Question');
+		}
+	}
 	
 	// Show/hide the form when the attach poll box is checked
 	$('#Form_AttachDiscussionPoll').change( function(event) {
@@ -50,6 +64,7 @@ jQuery(document).ready(function($){
 		var nextQuestionNum = parseInt(questionNum) + 1;
 		if($('#DPQuestion' + nextQuestionNum).length == 0) {
 			// Add another question field since there are no others
+			// TODO: Get this from a plugin definition so it can be disabled
 			$('#DPQuestion' + questionNum).after('<fieldset id="DPQuestion' + nextQuestionNum + '" class="DiscussionPollsQuestion"><label for="Form_DiscussionPollsQuestions">Question #' + (nextQuestionNum + 1) + '</label><div class="TextBoxWrapper"><input id="DiscussionPollsQuestions' + nextQuestionNum + '" name="Discussion/DiscussionPollsQuestions[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollsOptions' + nextQuestionNum + '-dot-0">Option #1</label><div class="TextBoxWrapper"><input id="DiscussionPollsOptions' + nextQuestionNum + '.0" name="Discussion/DiscussionPollsOptions' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div><label for="Form_DiscussionPollsOptions' + nextQuestionNum + '-dot-1">Option #2</label><div class="TextBoxWrapper"><input id="DiscussionPollsOptions' + nextQuestionNum + '.1" name="Discussion/DiscussionPollsOptions' + nextQuestionNum + '[]" value="" maxlength="100" class="InputBox BigInput" type="text"></div></fieldset>');
 			$('#DPQuestion' + nextQuestionNum).hide();
 		}

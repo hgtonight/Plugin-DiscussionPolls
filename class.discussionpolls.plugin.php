@@ -29,8 +29,9 @@ class DiscussionPolls extends Gdn_Plugin
 	public function Controller_Index($Sender) {
 		$DPModel = new DiscussionPollsModel();
 		
-		echo $DPModel->Exists(1);
-		echo 'I did something on the fake controller!';
+		$Poll = $DPModel->Get(1);
+		var_dump($Poll);
+		//echo 'I did something on the fake controller!';
 		$Sender->Render();
 	}
 	
@@ -65,6 +66,7 @@ class DiscussionPolls extends Gdn_Plugin
 	
 
 	// TODO: Document
+	// Render the poll form, inserting existing content if it exists
 	// Render form to create poll on new discussion page in 2.x
 	public function PostController_DiscussionFormOptions_Handler($Sender) {
 		//echo '<pre>'; var_dump($Sender); echo '</pre>';
@@ -73,32 +75,74 @@ class DiscussionPolls extends Gdn_Plugin
 		// render check box
 		$Sender->EventArguments['Options'] .= '<li>'.$Sender->Form->CheckBox('AttachDiscussionPoll', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)).'</li>';
 		
-		// TODO: Load any existing poll data
-		//$Sender->Form->SetValue('DiscussionPolls', $DiscussionPollsResult);
+		// Load up existing poll data
+		$DPModel = new DiscussionPollsModel();
+		$DiscussionPoll = $DPModel->Get($Sender->Discussion->DiscussionID);
 		
-		// TODO: Render poll inputs as read only if there are responses recorded
-		
-		// TODO: Put this stuff in a theme?
-		// render poll creation form
+		// Determine if the poll should be closed automatically
+		$Closed = $DPModel->HasResponses($Sender->Discussion->DiscussionID);
+		$Disabled = array();
+		if($Closed == TRUE) {
+			/*if(Gdn::Session()->CheckPermission('Plugins.DiscussionPolls.Manage')) {
+				// Managers can edit polls after responses have happened
+				echo Wrap(T('Plugins.DiscussionPolls.ManagePrivilegeNotice', 'You can edit the poll below even though responses are already recorded. Please take care so as to not alienate members of your community!'), 'div', array('class' => 'DismissMessage AlertMessage'));
+				$Closed = FALSE;
+			}
+			else {*/
+				echo Wrap(T('Plugins.DiscussionPolls.PollClosedNotice', 'You cannot edit a poll when responses are already recorded. You <em>may</em> delete this poll by unchecking the Attach Poll checkbox.'), 'div', array('class' => 'Messages Warning'));
+				$Disabled = array('disabled' => 'true');
+			//}
+		}
+		// The opening of the form
+		$Sender->Form->SetValue('DiscussionPollTitle', $DiscussionPoll->Title);
 		echo '<div class="P" id="DiscussionPollsForm">';
 			//$Sender->Form->InputPrefix = 'Discussion';
 			echo $Sender->Form->Label('Discussion Poll Title', 'DiscussionPollTitle');
-			echo Wrap($Sender->Form->TextBox('DiscussionPollTitle', array('maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+			echo Wrap($Sender->Form->TextBox('DiscussionPollTitle', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
 			
 			echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DPPreviousQuestion'));
-			// render the first poll question form
-			echo '<fieldset id="DPQuestion0" class="DiscussionPollsQuestion">';
-			echo $Sender->Form->Label('Question #1', 'DiscussionPollsQuestions');
-			echo Wrap($Sender->Form->TextBox('DiscussionPollsQuestions[]', array('id' => 'DiscussionPollsQuestions0', 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
 			
-			// start with two options 
-			for($i = 0; $i < 2; $i++) {
-				echo $Sender->Form->Label('Option #'.($i + 1), 'DiscussionPollsOptions0.'.$i);
-				echo Wrap($Sender->Form->TextBox('DiscussionPollsOptions0[]', array('id' => 'DiscussionPollsOptions0.'.$i, 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+			$QuestionCount = 0;
+			// set and the form data for existing questions and render a form
+			foreach($DiscussionPoll->Questions as $Question) {
+				echo '<fieldset id="DPQuestion'.$QuestionCount.'" class="DiscussionPollsQuestion">';
+				
+				// TODO: Figure out how to get SetValue to work with arrays
+				//$Sender->Form->SetValue('DiscussionPollsQuestions['.$QuestionCount.']', $Question->Title);
+				echo $Sender->Form->Label('Question #'.($QuestionCount + 1), 'DiscussionPollsQuestions');
+				echo Wrap($Sender->Form->TextBox('DiscussionPollsQuestions[]', array_merge($Disabled, array('value' => $Question->Title, 'id' => 'DiscussionPollsQuestions'.$QuestionCount, 'maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
+				$j = 0;
+				foreach($Question->Options as $Option) {
+					//$Sender->Form->SetValue('DiscussionPollsOptions'.$QuestionCount.'['.$j.']', $Option->Title);
+					echo $Sender->Form->Label('Option #'.($j + 1), 'DiscussionPollsOptions'.$QuestionCount.'.'.$i);
+					echo Wrap($Sender->Form->TextBox('DiscussionPollsOptions'.$QuestionCount.'[]', array_merge($Disabled, array('value' => $Option->Title, 'id' => 'DiscussionPollsOptions'.$QuestionCount.'.'.$i, 'maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
+					$j++;
+				}
+				$QuestionCount++;
+				echo '</fieldset>';
 			}
-			echo '</fieldset>';
-			echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
-			echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DPAddOption'));
+			
+			// If there is no data, render a single question form with 2 options to get started
+			if(!$QuestionCount) {
+				echo '<fieldset id="DPQuestion0" class="DiscussionPollsQuestion">';
+				echo $Sender->Form->Label('Question #1', 'DiscussionPollsQuestions');
+				echo Wrap($Sender->Form->TextBox('DiscussionPollsQuestions[]', array('id' => 'DiscussionPollsQuestions0', 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+
+				for($i = 0; $i < 2; $i++) {
+					echo $Sender->Form->Label('Option #'.($i + 1), 'DiscussionPollsOptions0.'.$i);
+					echo Wrap($Sender->Form->TextBox('DiscussionPollsOptions0[]', array('id' => 'DiscussionPollsOptions0.'.$i, 'maxlength' => 100, 'class' => 'InputBox BigInput')), 'div', array('class' => 'TextBoxWrapper'));
+				}
+				echo '</fieldset>';
+			}
+			
+			// the end of the form
+			if(!$Closed) {
+				echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
+				echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DPAddOption'));
+			}
+			else {
+				echo Anchor('Next Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
+			}
 		echo '</div>';
 	}
 
@@ -110,7 +154,7 @@ class DiscussionPolls extends Gdn_Plugin
 		$DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
 		$FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
 		
-		echo '<pre>'; var_dump($Sender->EventArguments); echo '</pre>';
+		echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
 		
 		// Unchecking the poll option will remove the poll if it exists
 		if(!GetValue('AttachDiscussionPoll', $FormPostValues)) {
@@ -204,6 +248,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   
 		$Construct->Table('DiscussionPollAnswers');
 		$Construct
+		   ->PrimaryKey('AnswerID')
 		   ->Column('PollID', 'int', TRUE, 'key')
 		   ->Column('QuestionID', 'int', TRUE, 'key')
 		   ->Column('UserID', 'int', TRUE, 'key')
