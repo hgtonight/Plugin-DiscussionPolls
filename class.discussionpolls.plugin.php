@@ -27,11 +27,12 @@ class DiscussionPolls extends Gdn_Plugin
 	// TODO: Document
 	// Will be used for the settings page if there is one
 	public function Controller_Index($Sender) {
+		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
+		
 		$DPModel = new DiscussionPollsModel();
 		
-		$Poll = $DPModel->Get(1);
-		var_dump($Poll);
-		//echo 'I did something on the fake controller!';
+		$DPModel->Delete($Sender->RequestArgs[0]);
+		
 		$Sender->Render();
 	}
 	
@@ -83,20 +84,23 @@ class DiscussionPolls extends Gdn_Plugin
 		$Closed = $DPModel->HasResponses($Sender->Discussion->DiscussionID);
 		$Disabled = array();
 		if($Closed == TRUE) {
-			/*if(Gdn::Session()->CheckPermission('Plugins.DiscussionPolls.Manage')) {
+			if(Gdn::Session()->CheckPermission('Plugins.DiscussionPolls.Manage')) {
 				// Managers can edit polls after responses have happened
 				echo Wrap(T('Plugins.DiscussionPolls.ManagePrivilegeNotice', 'You can edit the poll below even though responses are already recorded. Please take care so as to not alienate members of your community!'), 'div', array('class' => 'DismissMessage AlertMessage'));
 				$Closed = FALSE;
 			}
-			else {*/
+			else {
 				echo Wrap(T('Plugins.DiscussionPolls.PollClosedNotice', 'You cannot edit a poll when responses are already recorded. You <em>may</em> delete this poll by unchecking the Attach Poll checkbox.'), 'div', array('class' => 'Messages Warning'));
 				$Disabled = array('disabled' => 'true');
-			//}
+			}
 		}
+		
 		// The opening of the form
+		$Sender->Form->InputPrefix = 'Discussion';
 		$Sender->Form->SetValue('DiscussionPollTitle', $DiscussionPoll->Title);
+		echo $Sender->Form->Hidden('PollID');
+		$Sender->Form->SetValue('DiscussionPollID', $DiscussionPoll->PollID);
 		echo '<div class="P" id="DiscussionPollsForm">';
-			//$Sender->Form->InputPrefix = 'Discussion';
 			echo $Sender->Form->Label('Discussion Poll Title', 'DiscussionPollTitle');
 			echo Wrap($Sender->Form->TextBox('DiscussionPollTitle', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
 			
@@ -151,33 +155,36 @@ class DiscussionPolls extends Gdn_Plugin
 	public function DiscussionModel_AfterSaveDiscussion_Handler($Sender) {
 		// Needed no matter what
 		$DPModel = new DiscussionPollsModel();
+		$Session = Gdn::Session();
+		
+		// Make sure we can add/manage polls
+		if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
+			echo T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.');
+			return;
+		}
+
 		$DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
 		$FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
 		
-		echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
-		
-		// Unchecking the poll option will remove the poll if it exists
+		// Unchecking the poll option will remove the poll
 		if(!GetValue('AttachDiscussionPoll', $FormPostValues)) {
-			// Check for existing poll
-			if($DPModel->Exists($DiscussionID)) {
-				// Delete existing poll
-				$DPModel->Delete($DiscussionID);
-			}
-			// Don't continue either way
+			// Delete existing poll
+			$DPModel->Delete($DiscussionID);
 			return;
 		}
-		die();
 		
 		// Check to see if there are already poll responses; exit
-		if($DPModel->HasResponses($DiscussionID)) {
+		if($DPModel->HasResponses($DiscussionID) &&
+			!$Session->CheckPermission('Plugins.DiscussionPolls.Manage')) {
 			// TODO: Show a message saying it can't be edited
+			echo T('Plugins.DiscussionPolls.UnableToEditAfterResponses', 'You do not have permission to edit a poll with responses.');
 			return;
 		}
-		// Make sure we can add polls
-		$Sender->Permission('Plugins.DiscussionPolls.Add','',FALSE);
 
 		// save poll form fields
 		$DPModel->Save($FormPostValues);
+		
+		die();
 	}
    
 	// TODO: Document

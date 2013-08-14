@@ -37,9 +37,9 @@ class DiscussionPollsModel extends Gdn_Model {
 	}
 	
 	/**
-	* Gets a poll object. Does not include individual user choices
+	* Gets a poll object associated with a discussion ID. Does not include individual user choices
 	*/
-	public function Get($ID) {
+	public function Get($DiscussionID) {
 		$this->SQL
 			->Select('p.*')
 			->Select('q.Text', '', 'Question')
@@ -50,19 +50,30 @@ class DiscussionPollsModel extends Gdn_Model {
 			->From('DiscussionPolls p')
 			->Join('DiscussionPollQuestions q', 'p.PollID = q.PollID')
 			->Join('DiscussionPollQuestionOptions o', 'q.QuestionID = o.QuestionID')
-			->Where('p.PollID', $ID);
+			->Where('p.DiscussionID', $DiscussionID);
 		
 		$DBResult = $this->SQL->Get()->Result();
 		
 		//echo '<pre>'; var_dump($DBResult); echo '</pre>';
-		
-		$Data = array(
-			'PollID' => $DBResult[0]->PollID,
-			'DiscussionID' => $DBResult[0]->DiscussionID,
-			'Title' => $DBResult[0]->Text,
-			'IsOpen' => $DBResult[0]->Open,
-			'Questions' => array()
-		);
+		if(!empty($DBResult)) {
+			$Data = array(
+				'PollID' => $DBResult[0]->PollID,
+				'DiscussionID' => $DBResult[0]->DiscussionID,
+				'Title' => $DBResult[0]->Text,
+				'IsOpen' => $DBResult[0]->Open,
+				'Questions' => array()
+			);
+		}
+		else {
+			// Pass an empty array back
+			$Data = array(
+				'PollID' => '',
+				'DiscussionID' => '',
+				'Title' => '',
+				'IsOpen' => '',
+				'Questions' => array()
+			);
+		}
 		// Loop through the result and assemble an associative array
 		foreach($DBResult as $Row) {
 			//echo '<pre>'; var_dump($Row); echo '</pre>';
@@ -90,7 +101,73 @@ class DiscussionPollsModel extends Gdn_Model {
 	* Saves the poll
 	*/
 	public function Save($FormPostValues) {
-	
+		$PollID = ArrayValue('Discussion/PollID', $FormPostValues, '');
+		echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
+		
+		// Determine if we are updating or inserting
+		$Insert = $PollID == '' ? TRUE : FALSE;
+		
+		/*if($Insert) {
+			echo 'Inserted!';
+			// Insert the poll
+			$this->SQL->Insert('DiscussionPolls', array(
+				'DiscussionID' => $FormPostValues['DiscussionID'],
+				'Text' => $FormPostValues['Discussion/DiscussionPollTitle']));
+				
+			// Select the poll ID
+			$this->SQL
+				->Select('p.PollID')
+				->From('DiscussionPolls p')
+				->Where('p.DiscussionID', $FormPostValues['DiscussionID']);
+				
+			$PollID = $this->SQL->Get()->FirstRow()->PollID;
+			//echo '<pre>'; var_dump($PollID); echo '</pre>';
+			
+			// Insert the questions
+			foreach($FormPostValues['Discussion/DiscussionPollsQuestions'] as $Index => $Question) {
+				$this->SQL
+					->Insert('DiscussionPollQuestions', array(
+						'PollID' => $PollID,
+						'Text' => $Question)
+					);
+			}
+			
+			// Select the question IDs
+			$this->SQL
+				->Select('q.QuestionID')
+				->From('DiscussionPollQuestions q')
+				->Where('q.PollID', $PollID);
+			$QuestionIDs = $this->SQL->Get()->Result();
+			
+			//echo '<pre>'; var_dump($QuestionIDs); echo '</pre>';
+			// Insert the Options
+			foreach($QuestionIDs as $Index => $QuestionID) {
+				$QuestionOptions = ArrayValue('Discussion/DiscussionPollsOptions'.$Index, $FormPostValues);
+				//echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
+				foreach($QuestionOptions as $Option) {
+					$this->SQL
+						->Insert('DiscussionPollQuestionOptions', array(
+							'QuestionID' => $QuestionID->QuestionID,
+							'PollID' => $PollID,
+							'Text' => $Option)
+						);
+				}
+				//echo '<pre>'; var_dump($QuestionID['QuestionID']); echo '</pre>';
+			}
+		}
+		else {*/
+			echo 'Updating!';
+			//Update an existing poll
+			
+			// Get the existing poll object
+			$this->Get($FormPostValues['DiscussionID']);
+			$this->SQL
+				->Update('DiscussionPolls p')
+				->Set('PollID', $FormPostValues['DiscussionID'])
+				->Set('Text', $FormPostValues['Discussion/DiscussionPollTitle'])
+				->Where('p.PollID', $PollID)
+				->Put();
+		//}
 	}
 	
 	/**
@@ -106,7 +183,20 @@ class DiscussionPollsModel extends Gdn_Model {
 	/**
 	* Removes all data associated with the poll
 	*/
-	public function Delete($ID) {}
+	public function Delete($DiscussionID) {
+		// find the Poll ID associated with the discussion ID
+		$this->SQL
+			->Select('p.PollID')
+			->From('DiscussionPolls p')
+			->Where('p.DiscussionID', $DiscussionID);		
+		$PollID = $this->SQL->Get()->FirstRow()->PollID;
+		
+		// TODO: Optimize
+		$this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
+		$this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
+		$this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
+		$this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+	}
 	
 	/**
 	* Closes poll
