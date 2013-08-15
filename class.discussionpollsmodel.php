@@ -9,13 +9,13 @@ class DiscussionPollsModel extends Gdn_Model {
 	}
 	
 	/**
-	* Determines if the poll exists
+	* Determines if a poll associated with the discussion exists
 	*/
-	public function Exists($ID) {
+	public function Exists($DiscussionID) {
 		$this->SQL
 			->Select('PollID')
 			->From('DiscussionPolls')
-			->Where('PollID', $ID);
+			->Where('DiscussionID', $DiscussionID);
 		
 		$Data = $this->SQL->Get()->Result();
 		// echo '<pre>'; var_dump($Data); echo '</pre>';
@@ -23,13 +23,14 @@ class DiscussionPollsModel extends Gdn_Model {
 	}
 	
 	/**
-	* Determines if the poll has been answered at all
+	* Determines if a poll associated with the discussion has been answered at all
 	*/
-	public function HasResponses($ID) {
+	public function HasResponses($DiscussionID) {
 		$this->SQL
-			->Select('PollID')
-			->From('DiscussionPollAnswers')
-			->Where('PollID', $ID);
+			->Select('p.PollID')
+			->From('DiscussionPolls p')
+			->Join('DiscussionPollAnswers a', 'p.PollID = a.PollID')
+			->Where('p.DiscussionID', $DiscussionID);
 		
 		$Data = $this->SQL->Get()->Result();
 		// echo '<pre>'; var_dump($Data); echo '</pre>';
@@ -101,18 +102,18 @@ class DiscussionPollsModel extends Gdn_Model {
 	* Saves the poll
 	*/
 	public function Save($FormPostValues) {
-		$PollID = ArrayValue('Discussion/PollID', $FormPostValues, '');
-		echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
+		//$PollID = ArrayValue('PollID', $FormPostValues, '');
+		//echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
 		
 		// Determine if we are updating or inserting
-		$Insert = $PollID == '' ? TRUE : FALSE;
+		//$Insert = $PollID == '' ? TRUE : FALSE;
 		
-		/*if($Insert) {
-			echo 'Inserted!';
+		//if($Insert) {
+			//echo 'Inserted!';
 			// Insert the poll
 			$this->SQL->Insert('DiscussionPolls', array(
 				'DiscussionID' => $FormPostValues['DiscussionID'],
-				'Text' => $FormPostValues['Discussion/DiscussionPollTitle']));
+				'Text' => $FormPostValues['DiscussionPollTitle']));
 				
 			// Select the poll ID
 			$this->SQL
@@ -124,7 +125,7 @@ class DiscussionPollsModel extends Gdn_Model {
 			//echo '<pre>'; var_dump($PollID); echo '</pre>';
 			
 			// Insert the questions
-			foreach($FormPostValues['Discussion/DiscussionPollsQuestions'] as $Index => $Question) {
+			foreach($FormPostValues['DiscussionPollsQuestions'] as $Index => $Question) {
 				$this->SQL
 					->Insert('DiscussionPollQuestions', array(
 						'PollID' => $PollID,
@@ -142,7 +143,7 @@ class DiscussionPollsModel extends Gdn_Model {
 			//echo '<pre>'; var_dump($QuestionIDs); echo '</pre>';
 			// Insert the Options
 			foreach($QuestionIDs as $Index => $QuestionID) {
-				$QuestionOptions = ArrayValue('Discussion/DiscussionPollsOptions'.$Index, $FormPostValues);
+				$QuestionOptions = ArrayValue('DiscussionPollsOptions'.$Index, $FormPostValues);
 				//echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
 				foreach($QuestionOptions as $Option) {
 					$this->SQL
@@ -154,8 +155,8 @@ class DiscussionPollsModel extends Gdn_Model {
 				}
 				//echo '<pre>'; var_dump($QuestionID['QuestionID']); echo '</pre>';
 			}
-		}
-		else {*/
+		/*}
+		else {
 			echo 'Updating!';
 			//Update an existing poll
 			
@@ -167,13 +168,13 @@ class DiscussionPollsModel extends Gdn_Model {
 				->Set('Text', $FormPostValues['Discussion/DiscussionPollTitle'])
 				->Where('p.PollID', $PollID)
 				->Put();
-		//}
+		}*/
 	}
 	
 	/**
 	* Gets an answer object. Does not include the poll object
 	*/
-	public function GetAnswer($ID, $UserID) {}
+	public function HasAnswered($DiscussionID, $UserID) {}
 	
 	/**
 	* Saves the poll answer for a specific user
@@ -200,7 +201,8 @@ class DiscussionPollsModel extends Gdn_Model {
 	
 	/**
 	* Closes poll
-	* TODO: Future feature
 	*/
-	public function Close($ID) {}
+	public function Close($DiscussionID) {
+	
+	}
 }
