@@ -35,15 +35,55 @@ class DiscussionPolls extends Gdn_Plugin
 	// TODO: Document
 	// create a fake controller for poll
 	public function DiscussionController_Poll_Create($Sender) {
+		//echo '<pre>'; var_dump($Args); echo '</pre>';
 		$this->Dispatch($Sender, $Sender->RequestArgs);
 	}
 	
 	// TODO: Document
 	// Will be used for the settings page if there is one
 	public function Controller_Index($Sender) {
-		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
+		//echo '<pre>'; var_dump($Sender); echo '</pre>';
+		//echo '<pre>'; var_dump($Sender->Request->GetRequestArguments('post')); echo '</pre>';
 		
 		$Sender->Render($this->GetView('poll.php'));
+	}
+	
+	// TODO: Document
+	// Submit a poll
+	public function Controller_Submit($Sender) {
+		//echo '<pre>'; var_dump($Sender->Form->FormValues()); echo '</pre>';
+		//echo '<pre>'; var_dump($Sender->Request->GetRequestArguments('post')); echo '</pre>';
+		$Session = Gdn::Session();
+		$FormPostValues = $Sender->Form->FormValues();
+		
+		// You have to have voting privilege only
+		if(!$Session->CheckPermission('Plugins.DiscussionPolls.Vote', FALSE)
+			|| !$Session->UserID) {
+			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
+			Redirect('discussions/'.$FormPostValues->DiscussionID);
+		}
+		
+		// If seeing the form for the first time...
+		if ($Sender->Form->AuthenticatedPostBack() === FALSE) {
+			// redirect to the discussions view
+			Redirect('discussions');
+			//$Sender->Form->SetData($ConfigurationModel->Data);
+		}
+		else {
+			$DPModel = new DiscussionPollsModel();
+			
+			$Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
+			if ($Saved) {
+				$Sender->InformMessage('<span class="InformSprite Sliders"></span>'.T('Your poll has been submitted.'),'HasSprite');
+			}
+			else {
+				$Sender->InformMessage('<span class="InformSprite Sliders"></span>'.T('Your poll was not submitted. Please try again.'),'HasSprite');
+			}
+			Redirect('discussions/'.$FormPostValues->DiscussionID);
+		}
+		
+		// Render the proper view
+		$Sender->Render($this->GetView('submitpoll.php'));
 	}
 	
 	public function Controller_Delete($Sender) {
@@ -62,10 +102,8 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		$DPModel = new DiscussionPollsModel();
 		
-		if($Sender->RequestArgs[0] == 'delete') {
-			$DPModel->Delete($Sender->RequestArgs[1]);
-			echo 'deleted poll with discussion id: '.$Sender->RequestArgs[1];
-		}
+		$DPModel->Close($Sender->RequestArgs[0]);
+		echo 'deleted poll with discussion id: '.$Sender->RequestArgs[0];
 		
 		$Sender->Render($this->GetView('poll.php'));
 	}
@@ -74,6 +112,7 @@ class DiscussionPolls extends Gdn_Plugin
 	// Add css and js to the discussion controller 
 	public function DiscussionController_Render_Before($Sender) {
 		// Add poll response resources
+		$this->_AddResources($Sender);
 	}
 	
 	// TODO: Document
@@ -275,7 +314,7 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		// Make sure we can add/manage polls
 		if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
-			$Sender->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
+			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
 			return;
 		}
 
@@ -285,14 +324,14 @@ class DiscussionPolls extends Gdn_Plugin
 		// Unchecking the poll option will remove the poll
 		if(!GetValue('AttachDiscussionPoll', $FormPostValues)) {
 			// Delete existing poll
-			$Sender->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
+			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
 			$DPModel->Delete($DiscussionID);
 			return;
 		}
 		
 		if($DPModel->Exists($DiscussionID)) {
 			// Skip saving if a poll exists
-			$Sender->InformMessage(T('Plugins.DiscussionPolls.AlreadyExists', 'This poll already exists, poll was not updated'));
+			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.AlreadyExists', 'This poll already exists, poll was not updated'));
 			return;
 		}
 		
@@ -300,7 +339,7 @@ class DiscussionPolls extends Gdn_Plugin
 		if($DPModel->HasResponses($DiscussionID) &&
 			!$Session->CheckPermission('Plugins.DiscussionPolls.Manage')) {
 			
-			$Sender->InformMessage(T('Plugins.DiscussionPolls.UnableToEditAfterResponses', 'You do not have permission to edit a poll with responses.'));
+			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEditAfterResponses', 'You do not have permission to edit a poll with responses.'));
 			return;
 		}
 
@@ -312,7 +351,7 @@ class DiscussionPolls extends Gdn_Plugin
 	}
    
 	// TODO: Document
-	// Remove attach poll when discussion is deleted
+	// Remove attached poll when discussion is deleted
 	public function DiscussionModel_DeleteDiscussion_Handler($Sender) {
 		// Get discussionID that is being deleted
 		$DiscussionID = $Sender->EventArguments['DiscussionID'];
@@ -323,26 +362,117 @@ class DiscussionPolls extends Gdn_Plugin
 	}
    
 	// TODO: Document
+	// Will render a poll form if the user is allowed to see polls
+	// Renders the results if a user has voted or the poll is closed; renders a submission form otherwise
 	protected function _InsertPollAnswerForm($Sender) {
-		// Check to see if the discussion is closed.
-		$Sender->Permission('Plugins.DiscussionPolls.View','',FALSE);
-		echo '<pre>'; var_dump($Sender->Discussion); echo '</pre>';
-		echo '<pre>Rendering Poll</pre>';
+		// echo '<pre>'; var_dump($Sender->Discussion); echo '</pre>';
+		$Discussion = $Sender->Discussion;
+		$Session = Gdn::Session();
+		$DPModel = new DiscussionPollsModel();
 		
-		// Render the poll if it exists
-		
-			// Has the user voted?
-				
-				// Render results
-				
-				// Render poll questions
+		// Does an attached poll exist?
+		if($DPModel->Exists($Discussion->DiscussionID)) {
+			$Poll = $DPModel->Get($Discussion->DiscussionID);
+			// Can the current user view polls?
+			if(!$Session->CheckPermission('Plugins.DiscussionPolls.View')) {
+				// make this configurable?
+				echo Wrap(T('Plugins.DiscussionPolls.NoView', 'You do not have permission to view polls.'), 'div', array('class' => 'DiscussionPollsAnswerForm'));
+				return;
+			}
+			// Check to see if the discussion is closed
+			if($Discussion->Closed) {
+				// Close the Poll if the discussion is closed (workaround)
+				$DPModel->Close($Discussion->DiscussionID);
+				// TODO: Get rid of workaround by finding _some way_ to hook into the discussion model
+				// and close/open the poll **only** when the attached discussion is [un]closed.
+				$Closed = TRUE;
+			}
 			
+			// Render the poll
+			//echo '<pre>'; var_dump($Session); echo '</pre>';
+			echo '<div class="DiscussionPollsAnswerForm">';
+			echo $Poll->Title;
+			
+			// Has the user voted?
+			if($DPModel->HasAnswered($Poll->PollID, $Session->UserID) || !$Session->IsValid()) {
+				// Render results
+				echo '<ol class="DiscussionPollResultQuestions">';
+				foreach($Poll->Questions as $Question) {
+					echo '<li class="DiscussionPollResultQuestion">';
+					echo Wrap($Question->Title, 'span');					
+					// k is used to have different option bar colors
+					$k = $Question->QuestionID % 10;//rand(0, 9);
+					echo '<ol class="DiscussionPollResultOptions">';
+					foreach($Question->Options as $Option) {
+						$string = Wrap($Option->Title, 'div');
+						$score = number_format(($Option->Score / $Question->CountAnswers * 100), 2);
+						if($score < 10) {
+							$score = $score.'%';
+							// put the text on the outside
+							$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">&nbsp</span>'.$score;
+						}
+						else {
+							$score = $score.'%';
+							// put the text on the inside
+							$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">'.$score.'</span>';
+						}
+						
+						echo Wrap($string, 'li', 'DiscussionPollResultOption');
+						
+						$k++; $k = $k % 10;
+					}
+					echo '</ol>';
+					echo '</li>';
+				}
+				echo '</ol>';
+			}
+			else {
+				$Sender->PollForm = new Gdn_Form();
+				$Sender->PollForm->Action = Url('/discussion/poll/submit/');
+				$Sender->PollForm->AddHidden('DiscussionID', $Discussion->DiscussionID);
+				$Sender->PollForm->AddHidden('PollID', $Poll->PollID);
+				
+				// TODO: Look into AJAX form submission 'ajax' => TRUE
+				echo $Sender->PollForm->Open();
+				echo $Sender->PollForm->Errors();
+				
+				// $this->Form = Gdn::Factory('Form', 'Comment');
+				// $this->Form->Action = Url('/vanilla/post/comment/');
+				// $this->DiscussionID = $this->Discussion->DiscussionID;
+				// $this->Form->AddHidden('DiscussionID', $this->DiscussionID);
+				// $this->Form->AddHidden('CommentID', '');
+				$m = 0;
+				// Render poll questions
+				echo '<ol class="DiscussionPollAnswerQs">';
+				foreach($Poll->Questions as $Question) {
+					echo '<li class="DiscussionPollAnswerQ">';
+					echo $Sender->PollForm->Hidden('DiscussionPollAnswerQuestions[]', array('value' => $Question->QuestionID));
+					echo Wrap($Question->Title, 'span');
+					echo '<ol class="DiscussionPollAnswerOs">';
+					//echo '<pre>'; var_dump($Question); echo '</pre>';
+					foreach($Question->Options as $Option) {
+						echo Wrap($Sender->PollForm->Radio('DiscussionPollAnswer'.$m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
+					}
+					echo '</ol>';
+					echo '</li>';
+					$m++;
+				}
+				echo '</ol>';
+				
+				echo $Sender->PollForm->Close('Submit');
+			}
+			
+			echo '</div>';
+		}
 		
 		// Render poll controls if the user owns this discussion or they have the DiscussionPolls.Manage permission
+		else {
+			// Is the current user the discussion owner
 			
-			// Attach if poll doesn't exist
-				
-			// Remove if poll exists
+				// Attach if poll doesn't exist
+					
+				// Remove if poll exists
+		}
 	}
 	
 	protected function _AddResources($Sender) {
@@ -370,7 +500,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->PrimaryKey('QuestionID')
 		   ->Column('PollID', 'int', TRUE, 'key')
 		   ->Column('Text', 'varchar(140)')
-		   ->Column('Count', 'int', '0')
+		   ->Column('CountAnswers', 'int', '0')
 		   ->Set();
 		   
 		$Construct->Table('DiscussionPollQuestionOptions');

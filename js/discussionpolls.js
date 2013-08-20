@@ -1,7 +1,8 @@
 /* Copyright 2013 Zachary Doll All rights reserved. Do not distribute.*/
 jQuery(document).ready(function($){
-	var Closed = gdn.definition('DiscussionPollClosed');
-	var QuestionString = gdn.definition('DiscussionPollEmptyQuestion');
+	var Closed = gdn.definition('DiscussionPollClosed'); // This determines if the poll is closed and will be used in future releases
+	var QuestionString = gdn.definition('DiscussionPollEmptyQuestion'); // This is an empty form question; it is used to sidestep differences between 2.0 and 2.1 form functions
+	var ExistingPoll = false; // Is this a pre-existing poll page? Assume it is a new page
 	
 	// If there is a question string defined, this is a new poll
 	if(QuestionString != 'DiscussionPollEmptyQuestion') {
@@ -12,6 +13,7 @@ jQuery(document).ready(function($){
 		$('#Form_AttachDiscussionPoll').prop('checked', false);
 	}
 	else {
+		ExistingPoll = true;
 		// Hide the extra questions and make the buttons make sense
 		if($('fieldset.DiscussionPollsQuestion').length > 1) {
 			// Hide all but the first question form
@@ -24,7 +26,20 @@ jQuery(document).ready(function($){
 	// Show/hide the form when the attach poll box is checked
 	$('#Form_AttachDiscussionPoll').change( function(event) {
 		event.preventDefault();
-		$('#DiscussionPollsForm').slideToggle();
+		if ($(this).is(':checked')) {
+			$('#DiscussionPollsForm').slideDown();
+			if(ExistingPoll) {
+				// TODO: Inspect for negative side effects of removing the inform messages container
+				$('.InformMessages').fadeOut(500, function() { $(this).remove(); });
+			}
+		} else {
+			$('#DiscussionPollsForm').slideUp();
+			if(ExistingPoll) {
+				gdn.informMessage('<span class="InformSprite Gears"></span> Poll will be removed permanently if you save the discussion!', 'Dismissable HasSprite');
+			}
+		} 
+		
+		//$('#DiscussionPollsForm').slideToggle();		
 	});
 	
 	

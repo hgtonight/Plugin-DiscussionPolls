@@ -45,6 +45,7 @@ class DiscussionPollsModel extends Gdn_Model {
 			->Select('p.*')
 			->Select('q.Text', '', 'Question')
 			->Select('q.QuestionID')
+			->Select('q.CountAnswers')
 			->Select('o.Text', '', 'Option')
 			->Select('o.Score', '', 'OptionScore')
 			->Select('o.OptionID')
@@ -80,7 +81,7 @@ class DiscussionPollsModel extends Gdn_Model {
 			//echo '<pre>'; var_dump($Row); echo '</pre>';
 			if(array_key_exists($Row->QuestionID, $Data['Questions'])) {
 				// Just add the option
-				$Data['Questions'][$Row->QuestionID]['Options'][] = array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Count' => $Row->OptionScore);
+				$Data['Questions'][$Row->QuestionID]['Options'][] = array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Score' => $Row->OptionScore);
 			}
 			else {
 				// First time seeing this question
@@ -88,7 +89,8 @@ class DiscussionPollsModel extends Gdn_Model {
 				$Data['Questions'][$Row->QuestionID] = array(
 					'QuestionID' => $Row->QuestionID,
 					'Title' => $Row->Question,
-					'Options' => array(array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Count' => $Row->OptionScore))
+					'Options' => array(array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Score' => $Row->OptionScore)),
+					'CountAnswers' => $Row->CountAnswers
 				);
 			}
 		}
@@ -172,14 +174,57 @@ class DiscussionPollsModel extends Gdn_Model {
 	}
 	
 	/**
-	* Gets an answer object. Does not include the poll object
+	* Returns whether or not a user has answered a poll.
 	*/
-	public function HasAnswered($DiscussionID, $UserID) {}
+	public function HasAnswered($PollID, $UserID) {
+		$this->SQL
+			->Select('q.PollID, a.UserID')
+			->From('DiscussionPollQuestions q')
+			->Join('DiscussionPollAnswers a', 'q.QuestionID = a.QuestionID')
+			->Where('q.PollID', $PollID)
+			->Where('a.UserID', $UserID);
+			
+		$Result = $this->SQL->Get()->Result();
+		
+		return !empty($Result);
+	}
 	
 	/**
 	* Saves the poll answer for a specific user
 	*/
-	public function SaveAnswer($FormPostValues) {}
+	public function SaveAnswer($FormPostValues, $UserID) {
+		if($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
+			return FALSE;
+		}
+		else {
+			foreach($FormPostValues['DiscussionPollAnswerQuestions'] as $Index => $QuestionID) {
+				$MemberKey = 'DiscussionPollAnswer'.$Index;
+				$this->SQL
+					->Insert('DiscussionPollAnswers', array(
+						'PollID' => $FormPostValues['PollID'],
+						'QuestionID' => $QuestionID,
+						'UserID' => $UserID,
+						'OptionID' => $FormPostValues[$MemberKey])
+					);
+				
+				$this->SQL
+					->Update('DiscussionPollQuestions')
+					->Set('CountAnswers', 'CountAnswers + 1', FALSE)
+					->Where('QuestionID', $QuestionID)
+					->Put();
+				
+				$this->SQL
+					->Update('DiscussionPollQuestionOptions')
+					->Set('Score', 'Score + 1', FALSE)
+					->Where('OptionID', $FormPostValues[$MemberKey])
+					->Put();
+				//echo '<pre>'; var_dump($this->SQL); echo '</pre>';
+			}
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
 	
 	/**
 	* Removes all data associated with the poll
@@ -203,6 +248,24 @@ class DiscussionPollsModel extends Gdn_Model {
 	* Closes poll
 	*/
 	public function Close($DiscussionID) {
+		$this->SQL
+			->Update('DiscussionPolls p')
+			->Set('Open', 0)
+			->Where('p.DiscussionID', $DiscussionID)
+			->Put();
+	}
 	
+	/**
+	* Returns if the poll is closed or open.
+	* If the poll doesn't exist, it will return true.
+	*/
+	public function IsClosed($DiscussionID) {
+		$this->SQL
+			->Select('p.Open')
+			->From('DiscussionPolls p')
+			->Where('p.DiscussionID', $DiscussionID);		
+		$IsOpen = $this->SQL->Get()->FirstRow()->Open;
+		
+		return !$IsOpen;
 	}
 }
