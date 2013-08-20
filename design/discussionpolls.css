@@ -1,15 +1,5 @@
 /*	Copyright 2013 Zachary Doll All rights reserved. Do not distribute. */
-.DiscussionPollsQuestion {
-	width: 80%;
-	display: inline-block;
-}
-
-#DPNextQuestion, #DPPreviousQuestion {
-	width: 10%;
-	display: inline-block;
-}
-
-.DiscussionPollsAnswerForm {
+.DiscussionPollsAnswerForm, .DiscussionPollsResultsForm {
 	margin: 10px;
 	padding: 10px;
 	border: 1px solid rgb(190, 200, 204);
@@ -49,3 +39,8 @@
 .DiscussionPollBar-7 {background-color: #5f6fd3; color: #000; }
 .DiscussionPollBar-8 {background-color: #ff2af6; color: #000; }
 .DiscussionPollBar-9 {background-color: #37c88c; color: #000; }
+
+.DP_VoteCount {
+	display: block;
+	float: right;
+}

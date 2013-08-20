@@ -40,12 +40,8 @@ class DiscussionPolls extends Gdn_Plugin
 	}
 	
 	// TODO: Document
-	// Will be used for the settings page if there is one
 	public function Controller_Index($Sender) {
-		//echo '<pre>'; var_dump($Sender); echo '</pre>';
-		//echo '<pre>'; var_dump($Sender->Request->GetRequestArguments('post')); echo '</pre>';
-		
-		$Sender->Render($this->GetView('poll.php'));
+		Redirect('discussions');
 	}
 	
 	// TODO: Document
@@ -74,52 +70,77 @@ class DiscussionPolls extends Gdn_Plugin
 			
 			$Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
 			if ($Saved) {
-				$Sender->InformMessage('<span class="InformSprite Sliders"></span>'.T('Your poll has been submitted.'),'HasSprite');
+				Redirect('discussion/'.$FormPostValues['DiscussionID']);
 			}
 			else {
-				$Sender->InformMessage('<span class="InformSprite Sliders"></span>'.T('Your poll was not submitted. Please try again.'),'HasSprite');
+				Redirect('discussions');
 			}
-			Redirect('discussions/'.$FormPostValues->DiscussionID);
 		}
 		
 		// Render the proper view
-		$Sender->Render($this->GetView('submitpoll.php'));
+		//$Sender->Render($this->GetView('submitpoll.php'));
 	}
 	
+	// Renders the results of a poll
+	// Will render a full page view
+	// This is also used on the frontend with JS
+	public function Controller_Results($Sender) {
+		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
+		
+		$DPModel = new DiscussionPollsModel();
+		$Poll = $DPModel->Get($Sender->RequestArgs[1]);
+		
+		$PollResults = $this->_RenderResults($Poll, FALSE);
+		if($Sender->DeliveryType == DELIVERY_TYPE_VIEW) {
+			//$Data = array('html' => $PollResults);
+			echo json_encode($Data);
+		}
+		else {
+			$Sender->SetData('PollString', $PollResults);
+			$Sender->Render($this->GetView('poll.php'));
+		}
+	}
+	
+	// TODO: Use this somewhere
+	public function Controller_RemoveVote($Sender) {
+		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
+		
+		$DPModel = new DiscussionPollsModel();
+		$Poll = $DPModel->RemoveAnswer($Sender->RequestArgs[1], $Sender->RequestArgs[3]);
+		
+		$this->_RenderResults($Poll);
+	}
+	
+	// Renders the results of deleting a poll
+	// This will only be seen on legacy systems without JS
 	public function Controller_Delete($Sender) {
 		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
-		
 		$DPModel = new DiscussionPollsModel();
-		
-		$DPModel->Delete($Sender->RequestArgs[0]);
-		echo 'deleted poll with discussion id: '.$Sender->RequestArgs[0];
-		
-		$Sender->Render($this->GetView('poll.php'));
-	}
-	
-	public function Controller_Close($Sender) {
-		//echo '<pre>'; var_dump($Sender->RequestArgs); echo '</pre>';
-		
-		$DPModel = new DiscussionPollsModel();
-		
-		$DPModel->Close($Sender->RequestArgs[0]);
-		echo 'deleted poll with discussion id: '.$Sender->RequestArgs[0];
-		
-		$Sender->Render($this->GetView('poll.php'));
+		$DPModel->Delete($Sender->RequestArgs[1]);
+				
+		if($Sender->DeliveryType == DELIVERY_TYPE_VIEW) {
+			echo TRUE;
+		}
+		else {
+			$Sender->SetData('PollString', 'Removed poll with id '.$Sender->RequestArgs[1]);
+			$Sender->Render($this->GetView('poll.php'));
+		}
 	}
 	
 	// TODO: Document
 	// Add css and js to the discussion controller 
 	public function DiscussionController_Render_Before($Sender) {
 		// Add poll response resources
-		$this->_AddResources($Sender);
+		$Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
+		$Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
 	}
 	
 	// TODO: Document
 	// Add css and js to the discussion controller 
 	public function PostController_Render_Before($Sender) {
 		// Add poll creation resources
-		$this->_AddResources($Sender);
+		$Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
+		$Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
 	}
 	
 	// TODO: Document
@@ -130,7 +151,7 @@ class DiscussionPolls extends Gdn_Plugin
 		// Make sure event argument type is Discussion
 		if($Sender->EventArguments['Type'] == 'Discussion') {
 			// Insert Poll
-			$this->_InsertPollAnswerForm($Sender);
+			$this->_PollInsertion($Sender);
 		}
 	}
 	
@@ -138,7 +159,7 @@ class DiscussionPolls extends Gdn_Plugin
 	// Render poll in first post of discussion in 2.1b1 
 	public function DiscussionController_AfterDiscussionBody_Handler($Sender) {
 		// Insert Poll
-		$this->_InsertPollAnswerForm($Sender);
+		$this->_PollInsertion($Sender);
 	}
 	
 
@@ -155,7 +176,7 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		// Load up existing poll data
 		$DPModel = new DiscussionPollsModel();
-		$DiscussionPoll = $DPModel->Get($Sender->Discussion->DiscussionID);
+		$DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
 		
 		//echo '<pre>'; var_dump($DiscussionPoll); echo '</pre>';
 		
@@ -362,17 +383,18 @@ class DiscussionPolls extends Gdn_Plugin
 	}
    
 	// TODO: Document
-	// Will render a poll form if the user is allowed to see polls
-	// Renders the results if a user has voted or the poll is closed; renders a submission form otherwise
-	protected function _InsertPollAnswerForm($Sender) {
-		// echo '<pre>'; var_dump($Sender->Discussion); echo '</pre>';
+	// Determines what part of the poll (if any) needs to be rendered
+	// Checks permissions and displays any tools available to user
+	protected function _PollInsertion($Sender) {
+		//echo '<pre>'; var_dump($Sender->Discussion); echo '</pre>';
 		$Discussion = $Sender->Discussion;
 		$Session = Gdn::Session();
 		$DPModel = new DiscussionPollsModel();
 		
 		// Does an attached poll exist?
 		if($DPModel->Exists($Discussion->DiscussionID)) {
-			$Poll = $DPModel->Get($Discussion->DiscussionID);
+			$Results = FALSE;
+			$Poll = $DPModel->GetByDiscussionID($Discussion->DiscussionID);
 			// Can the current user view polls?
 			if(!$Session->CheckPermission('Plugins.DiscussionPolls.View')) {
 				// make this configurable?
@@ -388,96 +410,138 @@ class DiscussionPolls extends Gdn_Plugin
 				$Closed = TRUE;
 			}
 			
-			// Render the poll
-			//echo '<pre>'; var_dump($Session); echo '</pre>';
-			echo '<div class="DiscussionPollsAnswerForm">';
-			echo $Poll->Title;
-			
 			// Has the user voted?
 			if($DPModel->HasAnswered($Poll->PollID, $Session->UserID) || !$Session->IsValid()) {
+				$Results = TRUE;
+				
 				// Render results
-				echo '<ol class="DiscussionPollResultQuestions">';
-				foreach($Poll->Questions as $Question) {
-					echo '<li class="DiscussionPollResultQuestion">';
-					echo Wrap($Question->Title, 'span');					
-					// k is used to have different option bar colors
-					$k = $Question->QuestionID % 10;//rand(0, 9);
-					echo '<ol class="DiscussionPollResultOptions">';
-					foreach($Question->Options as $Option) {
-						$string = Wrap($Option->Title, 'div');
-						$score = number_format(($Option->Score / $Question->CountAnswers * 100), 2);
-						if($score < 10) {
-							$score = $score.'%';
-							// put the text on the outside
-							$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">&nbsp</span>'.$score;
-						}
-						else {
-							$score = $score.'%';
-							// put the text on the inside
-							$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">'.$score.'</span>';
-						}
-						
-						echo Wrap($string, 'li', 'DiscussionPollResultOption');
-						
-						$k++; $k = $k % 10;
-					}
-					echo '</ol>';
-					echo '</li>';
-				}
-				echo '</ol>';
+				$this->_RenderResults($Poll);
 			}
 			else {
-				$Sender->PollForm = new Gdn_Form();
-				$Sender->PollForm->Action = Url('/discussion/poll/submit/');
-				$Sender->PollForm->AddHidden('DiscussionID', $Discussion->DiscussionID);
-				$Sender->PollForm->AddHidden('PollID', $Poll->PollID);
-				
-				// TODO: Look into AJAX form submission 'ajax' => TRUE
-				echo $Sender->PollForm->Open();
-				echo $Sender->PollForm->Errors();
-				
-				// $this->Form = Gdn::Factory('Form', 'Comment');
-				// $this->Form->Action = Url('/vanilla/post/comment/');
-				// $this->DiscussionID = $this->Discussion->DiscussionID;
-				// $this->Form->AddHidden('DiscussionID', $this->DiscussionID);
-				// $this->Form->AddHidden('CommentID', '');
-				$m = 0;
-				// Render poll questions
-				echo '<ol class="DiscussionPollAnswerQs">';
-				foreach($Poll->Questions as $Question) {
-					echo '<li class="DiscussionPollAnswerQ">';
-					echo $Sender->PollForm->Hidden('DiscussionPollAnswerQuestions[]', array('value' => $Question->QuestionID));
-					echo Wrap($Question->Title, 'span');
-					echo '<ol class="DiscussionPollAnswerOs">';
-					//echo '<pre>'; var_dump($Question); echo '</pre>';
-					foreach($Question->Options as $Option) {
-						echo Wrap($Sender->PollForm->Radio('DiscussionPollAnswer'.$m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
-					}
-					echo '</ol>';
-					echo '</li>';
-					$m++;
-				}
-				echo '</ol>';
-				
-				echo $Sender->PollForm->Close('Submit');
+				// Render the submission form
+				$this->_RenderVotingForm($Sender, $Poll, $Session->UserID);
 			}
 			
-			echo '</div>';
-		}
-		
-		// Render poll controls if the user owns this discussion or they have the DiscussionPolls.Manage permission
-		else {
-			// Is the current user the discussion owner
+			// Render poll controls
+			// Owner and Plugins.DiscussionPolls.Manage gets delete if exists and attach if it doesn't
+			// Plugins.DiscussionPolls.View gets show results if the results aren't shown
+			$Tools = '';
+			if($Discussion->InsertUserID == $Session->UserID
+				|| $Session->CheckPermission('Plugins.DiscussionPolls.Manage') ) {
+				$Tools .= Wrap(
+					Anchor(T('Delete Poll'), '/discussion/poll/delete/'.$Poll->PollID),
+					'li',
+					array('id' => 'DP_Remove')
+				);
+			}
 			
-				// Attach if poll doesn't exist
-					
-				// Remove if poll exists
+			if(!$Results) {
+				$Tools .= Wrap(
+					Anchor(T('Show Results'), '/discussion/poll/results/'.$Poll->PollID),
+					'li',
+					array('id' => 'DP_Results')
+				);
+			}
+			
+			if($Tools != '') {
+				echo Wrap($Tools, 'ul', array('id' => 'DP_Tools'));
+			}
+		}
+		else {
+			// Poll does not exist
+			if($Discussion->InsertUserID == $Session->UserID
+				|| $Session->CheckPermission('Plugins.DiscussionPolls.Manage') ) {
+				echo Wrap(
+					Wrap(
+						Anchor('Attach Poll', '/vanilla/post/editdiscussion/'.$Discussion->DiscussionID),
+						'li'),
+					'ul',
+					array('id' => 'DP_Tools')
+				);
+			}
 		}
 	}
 	
-	protected function _AddResources($Sender) {
-		$Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
-		$Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
+	// TODO: Inspect partial view rendering
+	// Renders a poll object as results
+	protected function _RenderResults($Poll, $Echo = TRUE) {
+		//echo '<pre>'; var_dump($Poll); echo '</pre>';
+		$Result = '<div class="DiscussionPollsResultsForm">';
+		$Result .= $Poll->Title;
+		
+		$Result .= '<ol class="DiscussionPollResultQuestions">';
+		foreach($Poll->Questions as $Question) {
+			$Result .= '<li class="DiscussionPollResultQuestion">';
+			$Result .= Wrap($Question->Title, 'span');
+			$Result .= Wrap(sprintf(Plural($Question->CountAnswers, '%s vote', '%s votes'), $Question->CountAnswers), 'span', array('class' => 'Number DP_VoteCount'));
+			
+			// k is used to have different option bar colors
+			$k = $Question->QuestionID % 10;//rand(0, 9);
+			$Result .= '<ol class="DiscussionPollResultOptions">';
+			foreach($Question->Options as $Option) {
+				$string = Wrap($Option->Title, 'div');
+				$score = number_format(($Option->Score / $Question->CountAnswers * 100), 2);
+				if($score < 10) {
+					$score = $score.'%';
+					// put the text on the outside
+					$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">&nbsp</span>'.$score;
+				}
+				else {
+					$score = $score.'%';
+					// put the text on the inside
+					$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">'.$score.'</span>';
+				}
+				
+				$Result .= Wrap($string, 'li', 'DiscussionPollResultOption');
+				
+				$k++; $k = $k % 10;
+			}
+			$Result .= '</ol>';
+			$Result .= '</li>';
+		}
+		$Result .= '</ol>';
+		$Result .= '</div>';
+		
+		if($Echo) {
+			echo $Result;
+		}
+		else {
+			return $Result;
+		}
+	}
+	
+	// Renders a poll object as a voting form 
+	protected function _RenderVotingForm($Sender, $Poll) {
+		// Render the submission form
+		echo '<div class="DiscussionPollsAnswerForm">';
+		echo $Poll->Title;
+		$Sender->PollForm = new Gdn_Form();
+		$Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
+		$Sender->PollForm->AddHidden('PollID', $Poll->PollID);
+		
+		// TODO: Look into AJAX form submission 'ajax' => TRUE
+		echo $Sender->PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
+		echo $Sender->PollForm->Errors();
+		
+		$m = 0;
+		// Render poll questions
+		echo '<ol class="DiscussionPollAnswerQs">';
+		foreach($Poll->Questions as $Question) {
+			echo '<li class="DiscussionPollAnswerQ">';
+			echo $Sender->PollForm->Hidden('DiscussionPollAnswerQuestions[]', array('value' => $Question->QuestionID));
+			echo Wrap($Question->Title, 'span');
+			echo '<ol class="DiscussionPollAnswerOs">';
+			foreach($Question->Options as $Option) {
+				echo Wrap($Sender->PollForm->Radio('DiscussionPollAnswer'.$m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
+			}
+			echo '</ol>';
+			echo '</li>';
+			$m++;
+		}
+		echo '</ol>';
+		
+		echo $Sender->PollForm->Close('Submit');
+		echo '</div>';
 	}
 	
 	// Setup database structure for model
