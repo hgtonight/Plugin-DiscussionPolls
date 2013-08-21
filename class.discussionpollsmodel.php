@@ -45,9 +45,9 @@ class DiscussionPollsModel extends Gdn_Model {
 			->Select('p.*')
 			->Select('q.Text', '', 'Question')
 			->Select('q.QuestionID')
-			->Select('q.CountAnswers')
+			->Select('q.CountResponses')
 			->Select('o.Text', '', 'Option')
-			->Select('o.Score', '', 'OptionScore')
+			->Select('o.CountVotes', '', 'CountVotes')
 			->Select('o.OptionID')
 			->From('DiscussionPolls p')
 			->Join('DiscussionPollQuestions q', 'p.PollID = q.PollID')
@@ -79,7 +79,7 @@ class DiscussionPollsModel extends Gdn_Model {
 		foreach($DBResult as $Row) {
 			if(array_key_exists($Row->QuestionID, $Data['Questions'])) {
 				// Just add the option
-				$Data['Questions'][$Row->QuestionID]['Options'][] = array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Score' => $Row->OptionScore);
+				$Data['Questions'][$Row->QuestionID]['Options'][] = array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'CountVotes' => $Row->CountVotes);
 			}
 			else {
 				// First time seeing this question
@@ -87,8 +87,8 @@ class DiscussionPollsModel extends Gdn_Model {
 				$Data['Questions'][$Row->QuestionID] = array(
 					'QuestionID' => $Row->QuestionID,
 					'Title' => $Row->Question,
-					'Options' => array(array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'Score' => $Row->OptionScore)),
-					'CountAnswers' => $Row->CountAnswers
+					'Options' => array(array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'CountVotes' => $Row->CountVotes)),
+					'CountResponses' => $Row->CountResponses
 				);
 			}
 		}
@@ -118,7 +118,7 @@ class DiscussionPollsModel extends Gdn_Model {
 		// Insert the poll
 		$this->SQL->Insert('DiscussionPolls', array(
 			'DiscussionID' => $FormPostValues['DiscussionID'],
-			'Text' => $FormPostValues['DiscussionPollTitle']));
+			'Text' => $FormPostValues['DP_Title']));
 			
 		// Select the poll ID
 		$this->SQL
@@ -129,7 +129,7 @@ class DiscussionPollsModel extends Gdn_Model {
 		$PollID = $this->SQL->Get()->FirstRow()->PollID;
 		
 		// Insert the questions
-		foreach($FormPostValues['DiscussionPollsQuestions'] as $Index => $Question) {
+		foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
 			$this->SQL
 				->Insert('DiscussionPollQuestions', array(
 					'PollID' => $PollID,
@@ -146,7 +146,7 @@ class DiscussionPollsModel extends Gdn_Model {
 		
 		// Insert the Options
 		foreach($QuestionIDs as $Index => $QuestionID) {
-			$QuestionOptions = ArrayValue('DiscussionPollsOptions'.$Index, $FormPostValues);
+			$QuestionOptions = ArrayValue('DP_Options'.$Index, $FormPostValues);
 			//echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
 			foreach($QuestionOptions as $Option) {
 				$this->SQL
@@ -183,8 +183,8 @@ class DiscussionPollsModel extends Gdn_Model {
 			return FALSE;
 		}
 		else {
-			foreach($FormPostValues['DiscussionPollAnswerQuestions'] as $Index => $QuestionID) {
-				$MemberKey = 'DiscussionPollAnswer'.$Index;
+			foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+				$MemberKey = 'DP_Answer'.$Index;
 				$this->SQL
 					->Insert('DiscussionPollAnswers', array(
 						'PollID' => $FormPostValues['PollID'],
@@ -195,13 +195,13 @@ class DiscussionPollsModel extends Gdn_Model {
 				
 				$this->SQL
 					->Update('DiscussionPollQuestions')
-					->Set('CountAnswers', 'CountAnswers + 1', FALSE)
+					->Set('CountResponses', 'CountResponses + 1', FALSE)
 					->Where('QuestionID', $QuestionID)
 					->Put();
 				
 				$this->SQL
 					->Update('DiscussionPollQuestionOptions')
-					->Set('Score', 'Score + 1', FALSE)
+					->Set('CountVotes', 'CountVotes + 1', FALSE)
 					->Where('OptionID', $FormPostValues[$MemberKey])
 					->Put();
 				//echo '<pre>'; var_dump($this->SQL); echo '</pre>';

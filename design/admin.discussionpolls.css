@@ -1,10 +1,10 @@
 /*	Copyright 2013 Zachary Doll All rights reserved. Do not distribute. */
-.DiscussionPollsQuestion {
+.DP_Question {
 	width: 80%;
 	display: inline-block;
 }
 
-#DPNextQuestion, #DPPreviousQuestion {
+#DP_NextQuestion, #DP_PreviousQuestion {
 	width: 10%;
 	display: inline-block;
 }

@@ -24,7 +24,7 @@ class DiscussionPolls extends Gdn_Plugin
 	// Settings page
 	public function SettingsController_DiscussionPolls_Create($Sender) {
 		// Makes it look like a dashboard page
-		$Sender->AddSideMenu('plugin/bulkedit');
+		$Sender->AddSideMenu('settings/discussionpolls');
 		
 		$Sender->PluginDescription = 'A plugin that allows creating polls that attach to a discussion. Respects permissions.';
 		
@@ -172,7 +172,7 @@ class DiscussionPolls extends Gdn_Plugin
 		$Sender->Permission('Plugins.DiscussionPolls.Add','',FALSE);
 		
 		// render check box
-		$Sender->EventArguments['Options'] .= '<li>'.$Sender->Form->CheckBox('AttachDiscussionPoll', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)).'</li>';
+		$Sender->EventArguments['Options'] .= '<li>'.$Sender->Form->CheckBox('DP_Attach', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)).'</li>';
 		
 		// Load up existing poll data
 		$DPModel = new DiscussionPollsModel();
@@ -217,29 +217,29 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		//echo $Sender->Form->Hidden('PollID');
 		//$Sender->Form->SetValue('DiscussionPollID', $DiscussionPoll->PollID);
-		echo '<div class="P" id="DiscussionPollsForm">';
-			echo $Sender->Form->Label('Discussion Poll Title', 'DiscussionPollTitle');
-			echo Wrap($Sender->Form->TextBox('DiscussionPollTitle', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
+		echo '<div class="P" id="DP_Form">';
+			echo $Sender->Form->Label('Discussion Poll Title', 'DP_Title');
+			echo Wrap($Sender->Form->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
 			
-			echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DPPreviousQuestion'));
+			echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DP_PreviousQuestion'));
 			
 			$QuestionCount = 0;
 			// set and the form data for existing questions and render a form
 			foreach($DiscussionPoll->Questions as $Question) {
-				echo '<fieldset id="DPQuestion'.$QuestionCount.'" class="DiscussionPollsQuestion">';
+				echo '<fieldset id="DP_Question'.$QuestionCount.'" class="DP_Question">';
 				
 				// TODO: Figure out how to get SetValue to work with arrays
 				//$Sender->Form->SetValue('DiscussionPollsQuestions['.$QuestionCount.']', $Question->Title);
 				echo $Sender->Form->Label(
 					'Question #'.($QuestionCount + 1),
-					'DiscussionPollsQuestions'.$QuestionCount
+					'DP_Questions'.$QuestionCount
 				);
 				echo Wrap(
 					$Sender->Form->TextBox(
-						'DiscussionPollsQuestions[]',
+						'DP_Questions[]',
 						array_merge($Disabled, array(
 							'value' => $Question->Title,
-							'id' => 'DiscussionPollsQuestions'.$QuestionCount,
+							'id' => 'DP_Questions'.$QuestionCount,
 							'maxlength' => 100,
 							'class' => 'InputBox BigInput'
 						))),
@@ -252,15 +252,15 @@ class DiscussionPolls extends Gdn_Plugin
 					//$Sender->Form->SetValue('DiscussionPollsOptions'.$QuestionCount.'['.$j.']', $Option->Title);
 					echo $Sender->Form->Label(
 						'Option #'.($j + 1),
-						'DiscussionPollsOptions'.$QuestionCount.'.'.$i
+						'DP_Options'.$QuestionCount.'.'.$i
 					);
 					
 					echo Wrap(
 						$Sender->Form->TextBox(
-							'DiscussionPollsOptions'.$QuestionCount.'[]',
+							'DP_Options'.$QuestionCount.'[]',
 							array_merge($Disabled, array(
 								'value' => $Option->Title,
-								'id' => 'DiscussionPollsOptions'.$QuestionCount.'.'.$i,
+								'id' => 'DP_Options'.$QuestionCount.'.'.$i,
 								'maxlength' => 100,
 								'class' => 'InputBox BigInput'
 							))),
@@ -276,13 +276,13 @@ class DiscussionPolls extends Gdn_Plugin
 			
 			// If there is no data, render a single question form with 2 options to get started
 			if(!$QuestionCount) {
-				$DefaultQuestionString = '<fieldset id="DPQuestion0" class="DiscussionPollsQuestion">';
-				$DefaultQuestionString .= $Sender->Form->Label('Question #1', 'DiscussionPollsQuestions0');
+				$DefaultQuestionString = '<fieldset id="DP_Question0" class="DP_Question">';
+				$DefaultQuestionString .= $Sender->Form->Label('Question #1', 'DP_Questions0');
 				$DefaultQuestionString .=  Wrap(
 					$Sender->Form->TextBox(
-						'DiscussionPollsQuestions[]',
+						'DP_Questions[]',
 						array(
-							'id' => 'DiscussionPollsQuestions0',
+							'id' => 'DP_Questions0',
 							'maxlength' => 100,
 							'class' => 'InputBox BigInput'
 						)
@@ -294,13 +294,13 @@ class DiscussionPolls extends Gdn_Plugin
 				for($i = 0; $i < 2; $i++) {
 					$DefaultQuestionString .= $Sender->Form->Label(
 						'Option #'.($i + 1),
-						'DiscussionPollsOptions0.'.$i
+						'DP_Options0.'.$i
 					);
 					$DefaultQuestionString .= Wrap(
 						$Sender->Form->TextBox(
-							'DiscussionPollsOptions0[]',
+							'DP_Options0[]',
 							array(
-								'id' => 'DiscussionPollsOptions0.'.$i,
+								'id' => 'DP_Options0.'.$i,
 								'maxlength' => 100,
 								'class' => 'InputBox BigInput'
 							)
@@ -310,17 +310,17 @@ class DiscussionPolls extends Gdn_Plugin
 					);
 				}
 				$DefaultQuestionString .= '</fieldset>';
-				$Sender->AddDefinition('DiscussionPollEmptyQuestion', $DefaultQuestionString);
+				$Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
 				echo $DefaultQuestionString;
 			}
 			
 			// the end of the form
 			if(!$Closed) {
-				echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
-				echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DPAddOption'));
+				echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
+				echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DP_AddOption'));
 			}
 			else if($QuestionCount > 1){
-				echo Anchor('Next Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DPNextQuestion'));
+				echo Anchor('Next Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
 			}
 		echo '</div>';
 	}
@@ -343,7 +343,7 @@ class DiscussionPolls extends Gdn_Plugin
 		$FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
 		
 		// Unchecking the poll option will remove the poll
-		if(!GetValue('AttachDiscussionPoll', $FormPostValues)) {
+		if(!GetValue('DP_Attach', $FormPostValues)) {
 			// Delete existing poll
 			Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
 			$DPModel->Delete($DiscussionID);
@@ -398,7 +398,7 @@ class DiscussionPolls extends Gdn_Plugin
 			// Can the current user view polls?
 			if(!$Session->CheckPermission('Plugins.DiscussionPolls.View')) {
 				// make this configurable?
-				echo Wrap(T('Plugins.DiscussionPolls.NoView', 'You do not have permission to view polls.'), 'div', array('class' => 'DiscussionPollsAnswerForm'));
+				echo Wrap(T('Plugins.DiscussionPolls.NoView', 'You do not have permission to view polls.'), 'div', array('class' => 'DP_AnswerForm'));
 				return;
 			}
 			// Check to see if the discussion is closed
@@ -466,33 +466,33 @@ class DiscussionPolls extends Gdn_Plugin
 	// Renders a poll object as results
 	protected function _RenderResults($Poll, $Echo = TRUE) {
 		//echo '<pre>'; var_dump($Poll); echo '</pre>';
-		$Result = '<div class="DiscussionPollsResultsForm">';
+		$Result = '<div class="DP_ResultsForm">';
 		$Result .= $Poll->Title;
 		
-		$Result .= '<ol class="DiscussionPollResultQuestions">';
+		$Result .= '<ol class="DP_ResultQuestions">';
 		foreach($Poll->Questions as $Question) {
-			$Result .= '<li class="DiscussionPollResultQuestion">';
+			$Result .= '<li class="DP_ResultQuestion">';
 			$Result .= Wrap($Question->Title, 'span');
-			$Result .= Wrap(sprintf(Plural($Question->CountAnswers, '%s vote', '%s votes'), $Question->CountAnswers), 'span', array('class' => 'Number DP_VoteCount'));
+			$Result .= Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
 			
 			// k is used to have different option bar colors
 			$k = $Question->QuestionID % 10;//rand(0, 9);
-			$Result .= '<ol class="DiscussionPollResultOptions">';
+			$Result .= '<ol class="DP_ResultOptions">';
 			foreach($Question->Options as $Option) {
 				$string = Wrap($Option->Title, 'div');
-				$score = number_format(($Option->Score / $Question->CountAnswers * 100), 2);
-				if($score < 10) {
-					$score = $score.'%';
+				$Percentage = number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
+				if($Percentage < 10) {
+					$Percentage = $Percentage.'%';
 					// put the text on the outside
-					$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">&nbsp</span>'.$score;
+					$string .= '<span class="DP_Bar DP_Bar-'.$k.'" style="width: '.$Percentage.';">&nbsp</span>'.$Percentage;
 				}
 				else {
-					$score = $score.'%';
+					$Percentage = $Percentage.'%';
 					// put the text on the inside
-					$string .= '<span class="DiscussionPollBar DiscussionPollBar-'.$k.'" style="width: '.$score.';">'.$score.'</span>';
+					$string .= '<span class="DP_Bar DP_Bar-'.$k.'" style="width: '.$Percentage.';">'.$Percentage.'</span>';
 				}
 				
-				$Result .= Wrap($string, 'li', 'DiscussionPollResultOption');
+				$Result .= Wrap($string, 'li', 'DP_ResultOption');
 				
 				$k++; $k = $k % 10;
 			}
@@ -513,7 +513,7 @@ class DiscussionPolls extends Gdn_Plugin
 	// Renders a poll object as a voting form 
 	protected function _RenderVotingForm($Sender, $Poll) {
 		// Render the submission form
-		echo '<div class="DiscussionPollsAnswerForm">';
+		echo '<div class="DP_AnswerForm">';
 		echo $Poll->Title;
 		$Sender->PollForm = new Gdn_Form();
 		$Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
@@ -525,14 +525,14 @@ class DiscussionPolls extends Gdn_Plugin
 		
 		$m = 0;
 		// Render poll questions
-		echo '<ol class="DiscussionPollAnswerQs">';
+		echo '<ol class="DP_AnswerQuestions">';
 		foreach($Poll->Questions as $Question) {
-			echo '<li class="DiscussionPollAnswerQ">';
-			echo $Sender->PollForm->Hidden('DiscussionPollAnswerQuestions[]', array('value' => $Question->QuestionID));
+			echo '<li class="DP_AnswerQuestion">';
+			echo $Sender->PollForm->Hidden('DP_AnswerQuestions[]', array('value' => $Question->QuestionID));
 			echo Wrap($Question->Title, 'span');
-			echo '<ol class="DiscussionPollAnswerOs">';
+			echo '<ol class="DP_AnswerOptions">';
 			foreach($Question->Options as $Option) {
-				echo Wrap($Sender->PollForm->Radio('DiscussionPollAnswer'.$m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
+				echo Wrap($Sender->PollForm->Radio('DP_Answer'.$m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
 			}
 			echo '</ol>';
 			echo '</li>';
@@ -564,7 +564,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->PrimaryKey('QuestionID')
 		   ->Column('PollID', 'int', TRUE, 'key')
 		   ->Column('Text', 'varchar(140)')
-		   ->Column('CountAnswers', 'int', '0')
+		   ->Column('CountResponses', 'int', '0')
 		   ->Set();
 		   
 		$Construct->Table('DiscussionPollQuestionOptions');
@@ -573,7 +573,7 @@ class DiscussionPolls extends Gdn_Plugin
 		   ->Column('QuestionID', 'int', TRUE, 'key')
 		   ->Column('PollID', 'int', TRUE, 'key')
 		   ->Column('Text', 'varchar(140)')
-		   ->Column('Score', 'int', '0')
+		   ->Column('CountVotes', 'int', '0')
 		   ->Set();
 		   
 		$Construct->Table('DiscussionPollAnswers');

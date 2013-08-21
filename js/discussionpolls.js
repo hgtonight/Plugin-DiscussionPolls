@@ -6,7 +6,7 @@ jQuery(document).ready(function($) {
 		
 		if($(this).html() == 'Show Results') {
 			// Load from ajax if they don't exist
-			if($('.DiscussionPollsResultsForm').length == 0) {
+			if($('.DP_ResultsForm').length == 0) {
 				// Load Results from ajax
 				var btn = this;
 				$.ajax({
@@ -16,15 +16,15 @@ jQuery(document).ready(function($) {
 					data: 'DeliveryType=VIEW',
 					dataType: 'html',
 					success: function(Data) {
-						$('.DiscussionPollsAnswerForm').after(Data);
-						$('.DiscussionPollsResultsForm').hide();
+						$('.DP_AnswerForm').after(Data);
+						$('.DP_ResultsForm').hide();
 						}
 					});
 			}
 			
 			// Bring results to front
-			$('.DiscussionPollsAnswerForm').fadeOut('slow', function() {
-				$('.DiscussionPollsResultsForm').fadeIn('slow');
+			$('.DP_AnswerForm').fadeOut('slow', function() {
+				$('.DP_ResultsForm').fadeIn('slow');
 			});
 			
 			// Change tool mode
@@ -32,8 +32,8 @@ jQuery(document).ready(function($) {
 		}
 		else {
 			// Bring poll form to front
-			$('.DiscussionPollsResultsForm').fadeOut('slow', function() {
-				$('.DiscussionPollsAnswerForm').fadeIn('slow');
+			$('.DP_ResultsForm').fadeOut('slow', function() {
+				$('.DP_AnswerForm').fadeIn('slow');
 			});
 			
 			// Change tool mode
