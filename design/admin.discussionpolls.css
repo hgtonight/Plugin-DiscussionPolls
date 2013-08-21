@@ -6,7 +6,7 @@
   display: inline-block;
 }
 #DP_Form {
-  text-align: center;
+  /*text-align: center;*/
 }
 #DP_NextQuestion, #DP_PreviousQuestion {
   width: 9%;
@@ -29,10 +29,11 @@
 
 #DP_AddOption {
   height: 40px;
-  width: 160px;
+  width: 100%;
   display: inline-block;
   text-align: center;
   background-repeat: no-repeat;
+  background-position: center center;
   background-image: url('down-arrow.png');
   text-indent: -9999999px;
 }

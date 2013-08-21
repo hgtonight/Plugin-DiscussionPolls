@@ -45,7 +45,7 @@ jQuery(document).ready(function($) {
   $('#DP_Remove a').popup({
     confirm: true,
     followConfirm: false,
-    afterConfirm: function() {
+    afterConfirm: function(json, sender) {
       // Remove all poll tools and forms
       $('.DP_AnswerForm').slideUp('slow', function() {
         $(this).remove();

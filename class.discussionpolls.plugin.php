@@ -125,7 +125,6 @@ class DiscussionPolls extends Gdn_Plugin {
    * This will only be seen on legacy systems without JS
    * @param VanillaController $Sender DiscussionController
    */
-
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -136,16 +135,18 @@ class DiscussionPolls extends Gdn_Plugin {
     $Discussion = $DiscussionModel->GetID($Poll->DiscussionID);
 
     $PollOwnerID = $Discussion->InsertUserID;
-
+    
     if($Session->CheckPermission('Plugins.DiscussionPolls.Manage') || $PollOwnerID == $Session->UserID) {
       $DPModel = new DiscussionPollsModel();
       $DPModel->Delete($Sender->RequestArgs[1]);
 
+      $Result = 'Removed poll with id ' . $Sender->RequestArgs[1];
       if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
-        return json_encode(TRUE);
+        $Data = array('html' => $Result);
+        echo json_encode($Data);
       }
       else {
-        $Sender->SetData('PollString', 'Removed poll with id ' . $Sender->RequestArgs[1]);
+        $Sender->SetData('PollString', $Result);
         $Sender->Render($this->GetView('poll.php'));
       }
     }
@@ -341,7 +342,7 @@ class DiscussionPolls extends Gdn_Plugin {
    * @param VanillaModel $Sender DiscussionModel
    * @return boolean if the poll was saved
    */
-  public function DiscussionModel_AfterSaveDiscussion_Handler($Sender) {
+  public function DiscussionModel_BeforeSaveDiscussion_Handler($Sender) {
     // Needed no matter what
     $DPModel = new DiscussionPollsModel();
     $Session = Gdn::Session();
@@ -378,6 +379,27 @@ class DiscussionPolls extends Gdn_Plugin {
     }
 
     // Validate that all required fields are filled out
+    //echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
+    //die();
+    
+    $Invalid = FALSE;
+    foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
+      if(trim($Question) == FALSE) {
+        $Invalid = TRUE;
+        break;
+      }
+      foreach($FormPostValues['DP_Options'.$Index] as $Option) {
+        if(trim($Option) == FALSE) {
+          $Invalid = TRUE;
+          break;
+        }
+      }
+    }
+    
+    if($Invalid) {
+     die(); 
+    }
+    
     // TODO: Figure out a good way to validate the poll fields
     // save poll form fields
     $DPModel->Save($FormPostValues);
@@ -694,5 +716,4 @@ class DiscussionPolls extends Gdn_Plugin {
       ));
     }
   }
-
 }
