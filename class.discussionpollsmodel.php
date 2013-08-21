@@ -122,6 +122,7 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param array $FormPostValues
    */
   public function Save($FormPostValues) {
+    // TODO: Optimize
     // Insert the poll
     $this->SQL->Insert('DiscussionPolls', array(
         'DiscussionID' => $FormPostValues['DiscussionID'],
@@ -191,6 +192,7 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean False indicates the user has already voted
    */
   public function SaveAnswer($FormPostValues, $UserID) {
+    // TODO: Optimize
     if ($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
       return FALSE;
     } else {
