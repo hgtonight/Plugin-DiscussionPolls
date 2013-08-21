@@ -32,6 +32,5 @@ discussion you are attaching the poll to**.
 
 License
 =======
-This software is released under the GPLv3 and may be released under a different
-license with permission.
+This software is not released
 

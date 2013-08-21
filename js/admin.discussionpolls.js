@@ -22,7 +22,10 @@ jQuery(document).ready(function($) {
       $('#DP_NextQuestion').text('Next Question');
     }
   }
-
+  
+  // override the css initially
+  $('#DP_PreviousQuestion').css('background-image', 'none');
+  
   // Show/hide the form when the attach poll box is checked
   $('#Form_DP_Attach').change(function(event) {
     event.preventDefault();
@@ -105,7 +108,7 @@ jQuery(document).ready(function($) {
         $('#DP_Question' + questionNum).fadeOut(400, function() {
           $('#DP_Question' + nextQuestionNum).fadeIn();
           // Update previous question text
-          $('#DP_PreviousQuestion').text('Previous Question');
+          $('#DP_PreviousQuestion').text('Previous Question').css('background-image', '');
 
           nextQuestionNum++;
           if ($('#DP_Question' + nextQuestionNum).length === 0) {
@@ -172,7 +175,7 @@ jQuery(document).ready(function($) {
       $('#DP_Question' + questionNum).fadeOut(400, function() {
         $('#DP_Question' + nextQuestionNum).fadeIn();
         // Update previous question text
-        $('#DP_PreviousQuestion').text('Previous Question');
+        $('#DP_PreviousQuestion').text('Previous Question').css('background-image', '');
 
         nextQuestionNum++;
         if ($('#DP_Question' + nextQuestionNum).length === 0) {
@@ -198,7 +201,7 @@ jQuery(document).ready(function($) {
     }
 
     if (previousQuestionNum === 0) {
-      $(this).text(' ');
+      $(this).text(' ').css('background-image', 'none');
     }
   });
 

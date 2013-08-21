@@ -1,10 +1,38 @@
 /*	Copyright 2013 Zachary Doll All rights reserved. Do not distribute. */
 .DP_Question {
   width: 80%;
+  margin-left: 1%;
+  margin-right: 1%;
   display: inline-block;
 }
-
+#DP_Form {
+  text-align: center;
+}
 #DP_NextQuestion, #DP_PreviousQuestion {
-  width: 10%;
+  width: 9%;
+  height: 160px;
+  margin-top: 30px;
   display: inline-block;
+  text-align: center;
+  background-repeat: no-repeat;
+}
+
+#DP_NextQuestion {
+  float: right;
+  background-image: url('right-arrow.png');
+}
+
+#DP_PreviousQuestion {
+  float: left;
+  background-image: url('left-arrow.png');
+}
+
+#DP_AddOption {
+  height: 40px;
+  width: 160px;
+  display: inline-block;
+  text-align: center;
+  background-repeat: no-repeat;
+  background-image: url('down-arrow.png');
+  text-indent: -9999999px;
 }
