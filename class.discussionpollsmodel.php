@@ -1,6 +1,18 @@
-<?php if (!defined('APPLICATION')) exit();
-/* 	Copyright 2013 Zachary Doll All rights reserved. Do not distribute. */
-
+<?php if(!defined('APPLICATION')) exit();
+/* 	Copyright 2013 Zachary Doll
+ * 	This program is free software: you can redistribute it and/or modify
+ * 	it under the terms of the GNU General Public License as published by
+ * 	the Free Software Foundation, either version 3 of the License, or
+ * 	(at your option) any later version.
+ *
+ * 	This program is distributed in the hope that it will be useful,
+ * 	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * 	GNU General Public License for more details.
+ *
+ * 	You should have received a copy of the GNU General Public License
+ * 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 class DiscussionPollsModel extends Gdn_Model {
 
   /**
@@ -62,7 +74,7 @@ class DiscussionPollsModel extends Gdn_Model {
 
     $DBResult = $this->SQL->Get()->Result();
 
-    if (!empty($DBResult)) {
+    if(!empty($DBResult)) {
       $Data = array(
           'PollID' => $DBResult[0]->PollID,
           'DiscussionID' => $DBResult[0]->DiscussionID,
@@ -70,7 +82,8 @@ class DiscussionPollsModel extends Gdn_Model {
           'IsOpen' => $DBResult[0]->Open,
           'Questions' => array()
       );
-    } else {
+    }
+    else {
       // Pass an empty array back
       $Data = array(
           'PollID' => '',
@@ -81,11 +94,12 @@ class DiscussionPollsModel extends Gdn_Model {
       );
     }
     // Loop through the result and assemble an associative array
-    foreach ($DBResult as $Row) {
-      if (array_key_exists($Row->QuestionID, $Data['Questions'])) {
+    foreach($DBResult as $Row) {
+      if(array_key_exists($Row->QuestionID, $Data['Questions'])) {
         // Just add the option
         $Data['Questions'][$Row->QuestionID]['Options'][] = array('OptionID' => $Row->OptionID, 'Title' => $Row->Option, 'CountVotes' => $Row->CountVotes);
-      } else {
+      }
+      else {
         // First time seeing this question
         // Add it and the first option
         $Data['Questions'][$Row->QuestionID] = array(
@@ -137,7 +151,7 @@ class DiscussionPollsModel extends Gdn_Model {
     $PollID = $this->SQL->Get()->FirstRow()->PollID;
 
     // Insert the questions
-    foreach ($FormPostValues['DP_Questions'] as $Index => $Question) {
+    foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
       $this->SQL
               ->Insert('DiscussionPollQuestions', array(
                   'PollID' => $PollID,
@@ -153,10 +167,10 @@ class DiscussionPollsModel extends Gdn_Model {
     $QuestionIDs = $this->SQL->Get()->Result();
 
     // Insert the Options
-    foreach ($QuestionIDs as $Index => $QuestionID) {
+    foreach($QuestionIDs as $Index => $QuestionID) {
       $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
       //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
-      foreach ($QuestionOptions as $Option) {
+      foreach($QuestionOptions as $Option) {
         $this->SQL
                 ->Insert('DiscussionPollQuestionOptions', array(
                     'QuestionID' => $QuestionID->QuestionID,
@@ -193,10 +207,11 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function SaveAnswer($FormPostValues, $UserID) {
     // TODO: Optimize
-    if ($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
+    if($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
       return FALSE;
-    } else {
-      foreach ($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+    }
+    else {
+      foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
         $MemberKey = 'DP_Answer' . $Index;
         $this->SQL
                 ->Insert('DiscussionPollAnswers', array(

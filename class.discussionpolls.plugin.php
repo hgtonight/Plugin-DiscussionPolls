@@ -1,12 +1,22 @@
-<?php
-
-if(!defined('APPLICATION'))
-  exit();
-/* Copyright 2013 Zachary Doll All rights reserved. Do not distribute. */
+<?php if(!defined('APPLICATION')) exit();
+/* 	Copyright 2013 Zachary Doll
+ * 	This program is free software: you can redistribute it and/or modify
+ * 	it under the terms of the GNU General Public License as published by
+ * 	the Free Software Foundation, either version 3 of the License, or
+ * 	(at your option) any later version.
+ *
+ * 	This program is distributed in the hope that it will be useful,
+ * 	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * 	GNU General Public License for more details.
+ *
+ * 	You should have received a copy of the GNU General Public License
+ * 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '0.1',
+    'Version' => '1.0',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -125,6 +135,7 @@ class DiscussionPolls extends Gdn_Plugin {
    * This will only be seen on legacy systems without JS
    * @param VanillaController $Sender DiscussionController
    */
+
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -135,7 +146,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Discussion = $DiscussionModel->GetID($Poll->DiscussionID);
 
     $PollOwnerID = $Discussion->InsertUserID;
-    
+
     if($Session->CheckPermission('Plugins.DiscussionPolls.Manage') || $PollOwnerID == $Session->UserID) {
       $DPModel = new DiscussionPollsModel();
       $DPModel->Delete($Sender->RequestArgs[1]);
@@ -221,29 +232,9 @@ class DiscussionPolls extends Gdn_Plugin {
 
     $Sender->AddDefinition('DP_Closed', $Closed);
 
-    // Future release
-    // Determine if the poll should be closed automatically
-    /* $Closed = $DPModel->HasResponses($Sender->Discussion->DiscussionID);
-      $Disabled = array();
-      if($Closed == TRUE) {
-      if(Gdn::Session()->CheckPermission('Plugins.DiscussionPolls.Manage')) {
-      // Managers can edit polls after responses have happened
-      echo Wrap(T('Plugins.DiscussionPolls.ManagePrivilegeNotice', 'You can edit the poll below even though responses are already recorded. Please take care so as to not alienate members of your community!'), 'div', array('class' => 'DismissMessage AlertMessage'));
-      $Closed = FALSE;
-      }
-      else {
-      echo Wrap(T('Plugins.DiscussionPolls.PollClosedNotice', 'You cannot edit a poll when responses are already recorded. You <em>may</em> delete this poll by unchecking the Attach Poll checkbox.'), 'div', array('class' => 'Messages Warning'));
-      $Disabled = array('disabled' => 'true');
-      }
-      } */
-
     // The opening of the form
-    // This doesn't work on 2.0.18.8 --v
-    //$Sender->Form->InputPrefix = 'Discussion';
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
 
-    //echo $Sender->Form->Hidden('PollID');
-    //$Sender->Form->SetValue('DiscussionPollID', $DiscussionPoll->PollID);
     echo '<div class="P" id="DP_Form">';
     echo $Sender->Form->Label('Discussion Poll Title', 'DP_Title');
     echo Wrap($Sender->Form->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
@@ -272,7 +263,6 @@ class DiscussionPolls extends Gdn_Plugin {
 
       $j = 0;
       foreach($Question->Options as $Option) {
-        //$Sender->Form->SetValue('DiscussionPollsOptions'.$QuestionCount.'['.$j.']', $Option->Title);
         echo $Sender->Form->Label(
                 'Option #' . ($j + 1), 'DP_Options' . $QuestionCount . '.' . $i
         );
@@ -383,17 +373,17 @@ class DiscussionPolls extends Gdn_Plugin {
     $Invalid = FALSE;
     $Error = '';
     if(trim($FormPostValues['DP_Title']) == FALSE) {
-        $Invalid = TRUE;
-        $Error = 'You must enter a valid poll title!';
+      $Invalid = TRUE;
+      $Error = 'You must enter a valid poll title!';
     }
-    
+
     foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
       if(trim($Question) == FALSE) {
         $Invalid = TRUE;
         $Error = 'You must enter valid question text!';
         break;
       }
-      foreach($FormPostValues['DP_Options'.$Index] as $Option) {
+      foreach($FormPostValues['DP_Options' . $Index] as $Option) {
         if(trim($Option) == FALSE) {
           $Invalid = TRUE;
           $Error = 'You must enter valid option text!';
@@ -401,13 +391,13 @@ class DiscussionPolls extends Gdn_Plugin {
         }
       }
     }
-    
+
     if($Invalid) {
-            $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
-            die($Error);
-        }
-    
-// save poll form fields
+      $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
+      die($Error);
+    }
+
+    // save poll form fields
     $DPModel->Save($FormPostValues);
     return TRUE;
   }
@@ -517,7 +507,7 @@ class DiscussionPolls extends Gdn_Plugin {
       $Result .= Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
 
       // k is used to have different option bar colors
-      $k = $Question->QuestionID % 10; //rand(0, 9);
+      $k = $Question->QuestionID % 10;
       $Result .= '<ol class="DP_ResultOptions">';
       foreach($Question->Options as $Option) {
         $string = Wrap($Option->Title, 'div');
@@ -722,4 +712,5 @@ class DiscussionPolls extends Gdn_Plugin {
       ));
     }
   }
+
 }
