@@ -378,30 +378,36 @@ class DiscussionPolls extends Gdn_Plugin {
       return FALSE;
     }
 
+    // TODO: Find a better way to validat fields.
     // Validate that all required fields are filled out
-    //echo '<pre>'; var_dump($FormPostValues); echo '</pre>';
-    //die();
-    
     $Invalid = FALSE;
+    $Error = '';
+    if(trim($FormPostValues['DP_Title']) == FALSE) {
+        $Invalid = TRUE;
+        $Error = 'You must enter a valid poll title!';
+    }
+    
     foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
       if(trim($Question) == FALSE) {
         $Invalid = TRUE;
+        $Error = 'You must enter valid question text!';
         break;
       }
       foreach($FormPostValues['DP_Options'.$Index] as $Option) {
         if(trim($Option) == FALSE) {
           $Invalid = TRUE;
+          $Error = 'You must enter valid option text!';
           break;
         }
       }
     }
     
     if($Invalid) {
-     die(); 
-    }
+            $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
+            die($Error);
+        }
     
-    // TODO: Figure out a good way to validate the poll fields
-    // save poll form fields
+// save poll form fields
     $DPModel->Save($FormPostValues);
     return TRUE;
   }
