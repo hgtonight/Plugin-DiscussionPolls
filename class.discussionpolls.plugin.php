@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.0',
+    'Version' => '1.0.1',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -217,7 +217,6 @@ class DiscussionPolls extends Gdn_Plugin {
     $DPModel = new DiscussionPollsModel();
     $DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
 
-    //echo '<pre>'; var_dump($DiscussionPoll); echo '</pre>';
     // If there is existing poll data, disable editing
     // Editing will be in a future release
     if(!empty($DiscussionPoll->PollID)) {
@@ -328,48 +327,19 @@ class DiscussionPolls extends Gdn_Plugin {
   }
 
   /**
-   * Save poll when saving a discussion
+   * Validate the poll fields before we save so we can inform the user
+   * without saving the discussion
    * @param VanillaModel $Sender DiscussionModel
-   * @return boolean if the poll was saved
+   * @return boolean Whether or not validation was successful
    */
   public function DiscussionModel_BeforeSaveDiscussion_Handler($Sender) {
-    // Needed no matter what
-    $DPModel = new DiscussionPollsModel();
-    $Session = Gdn::Session();
-
-    // Make sure we can add/manage polls
-    if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
-      return FALSE;
-    }
-
-    $DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
     $FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
-
-    // Unchecking the poll option will remove the poll
     if(!GetValue('DP_Attach', $FormPostValues)) {
-      // Delete existing poll
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
-      $DPModel->Delete($DiscussionID);
+      // No need to validate
       return FALSE;
     }
 
-    if($DPModel->Exists($DiscussionID)) {
-      // Skip saving if a poll exists
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.AlreadyExists', 'This poll already exists, poll was not updated'));
-      return FALSE;
-    }
-
-    // Check to see if there are already poll responses; exit
-    if($DPModel->HasResponses($DiscussionID) &&
-            !$Session->CheckPermission('Plugins.DiscussionPolls.Manage')) {
-
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEditAfterResponses', 'You do not have permission to edit a poll with responses.'));
-      return FALSE;
-    }
-
-    // TODO: Find a better way to validat fields.
-    // Validate that all required fields are filled out
+    // Validate that all poll fields are filled out
     $Invalid = FALSE;
     $Error = '';
     if(trim($FormPostValues['DP_Title']) == FALSE) {
@@ -394,12 +364,95 @@ class DiscussionPolls extends Gdn_Plugin {
 
     if($Invalid) {
       $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
+      // should prevent the discussion from being saved
       die($Error);
     }
-
-    // save poll form fields
-    $DPModel->Save($FormPostValues);
     return TRUE;
+  }
+
+  /**
+   * Save poll when saving a discussion
+   * @param VanillaModel $Sender DiscussionModel
+   * @return boolean if the poll was saved
+   */
+  public function DiscussionModel_AfterSaveDiscussion_Handler($Sender) {
+    // Needed no matter what
+    $DPModel = new DiscussionPollsModel();
+    $Session = Gdn::Session();
+
+    // Make sure we can add/manage polls
+    if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
+      // this should only be shown to users that are mucking with the system
+      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
+      return FALSE;
+    }
+
+    // Don't trust the discussion ID implicitly
+    $DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
+    if($DiscussionID == 0) {
+      $Error = Wrap('Error', 'h1') . Wrap('Invalid discussion id', 'p');
+      return FALSE;
+    }
+
+    $FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
+
+    // Unchecking the poll option will remove the poll
+    if(!GetValue('DP_Attach', $FormPostValues)) {
+      // Delete existing poll
+      if($DPModel->Exists($DiscussionID)) {
+        Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
+        $DPModel->Delete($DiscussionID);
+        return FALSE;
+      }
+    }
+
+    if($DPModel->Exists($DiscussionID)) {
+      // Skip saving if a poll exists
+      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.AlreadyExists', 'This poll already exists, poll was not updated'));
+      return FALSE;
+    }
+
+    // Check to see if there are already poll responses; exit
+    if($DPModel->HasResponses($DiscussionID) &&
+            !$Session->CheckPermission('Plugins.DiscussionPolls.Manage')) {
+
+      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEditAfterResponses', 'You do not have permission to edit a poll with responses.'));
+      return FALSE;
+    }
+
+    // Validate that all poll fields are filled out
+    $Invalid = FALSE;
+    $Error = '';
+    if(trim($FormPostValues['DP_Title']) == FALSE) {
+      $Invalid = TRUE;
+      $Error = 'You must enter a valid poll title!';
+    }
+
+    foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
+      if(trim($Question) == FALSE) {
+        $Invalid = TRUE;
+        $Error = 'You must enter valid question text!';
+        break;
+      }
+      foreach($FormPostValues['DP_Options' . $Index] as $Option) {
+        if(trim($Option) == FALSE) {
+          $Invalid = TRUE;
+          $Error = 'You must enter valid option text!';
+          break;
+        }
+      }
+    }
+
+    if($Invalid) {
+      // fail silently since this shouldn't happen
+      $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
+      return FALSE;
+    }
+    else {
+      // save poll form fields
+      $DPModel->Save($FormPostValues);
+      return TRUE;
+    }
   }
 
   /**
