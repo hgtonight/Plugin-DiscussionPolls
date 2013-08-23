@@ -138,47 +138,57 @@ class DiscussionPollsModel extends Gdn_Model {
   public function Save($FormPostValues) {
     // TODO: Optimize
     // Insert the poll
-    $this->SQL->Insert('DiscussionPolls', array(
-        'DiscussionID' => $FormPostValues['DiscussionID'],
-        'Text' => $FormPostValues['DP_Title']));
 
-    // Select the poll ID
-    $this->SQL
-            ->Select('p.PollID')
-            ->From('DiscussionPolls p')
-            ->Where('p.DiscussionID', $FormPostValues['DiscussionID']);
+   try {
+      $this->Database->BeginTransaction();
 
-    $PollID = $this->SQL->Get()->FirstRow()->PollID;
+      $this->SQL->Insert('DiscussionPolls', array(
+          'DiscussionID' => $FormPostValues['DiscussionID'],
+          'Text' => $FormPostValues['DP_Title']));
 
-    // Insert the questions
-    foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
+      // Select the poll ID
       $this->SQL
-              ->Insert('DiscussionPollQuestions', array(
-                  'PollID' => $PollID,
-                  'Text' => $Question)
-      );
-    }
+              ->Select('p.PollID')
+              ->From('DiscussionPolls p')
+              ->Where('p.DiscussionID', $FormPostValues['DiscussionID']);
 
-    // Select the question IDs
-    $this->SQL
-            ->Select('q.QuestionID')
-            ->From('DiscussionPollQuestions q')
-            ->Where('q.PollID', $PollID);
-    $QuestionIDs = $this->SQL->Get()->Result();
+      $PollID = $this->SQL->Get()->FirstRow()->PollID;
 
-    // Insert the Options
-    foreach($QuestionIDs as $Index => $QuestionID) {
-      $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
-      //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
-      foreach($QuestionOptions as $Option) {
+      // Insert the questions
+      foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
         $this->SQL
-                ->Insert('DiscussionPollQuestionOptions', array(
-                    'QuestionID' => $QuestionID->QuestionID,
+                ->Insert('DiscussionPollQuestions', array(
                     'PollID' => $PollID,
-                    'Text' => $Option)
+                    'Text' => $Question)
         );
       }
-    }
+
+      // Select the question IDs
+      $this->SQL
+              ->Select('q.QuestionID')
+              ->From('DiscussionPollQuestions q')
+              ->Where('q.PollID', $PollID);
+      $QuestionIDs = $this->SQL->Get()->Result();
+
+      // Insert the Options
+      foreach($QuestionIDs as $Index => $QuestionID) {
+        $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
+        //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
+        foreach($QuestionOptions as $Option) {
+          $this->SQL
+                  ->Insert('DiscussionPollQuestionOptions', array(
+                      'QuestionID' => $QuestionID->QuestionID,
+                      'PollID' => $PollID,
+                      'Text' => $Option)
+          );
+        }
+      }
+
+      $this->Database->CommitTransaction();
+   } catch (Exception $Ex) {
+      $this->Database->RollbackTransaction();
+      throw $Ex;
+   }
   }
 
   /**
@@ -211,28 +221,36 @@ class DiscussionPollsModel extends Gdn_Model {
       return FALSE;
     }
     else {
-      foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
-        $MemberKey = 'DP_Answer' . $Index;
-        $this->SQL
-                ->Insert('DiscussionPollAnswers', array(
-                    'PollID' => $FormPostValues['PollID'],
-                    'QuestionID' => $QuestionID,
-                    'UserID' => $UserID,
-                    'OptionID' => $FormPostValues[$MemberKey])
-        );
+      try {
+        $this->Database->BeginTransaction();
+        foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+          $MemberKey = 'DP_Answer' . $Index;
+          $this->SQL
+                  ->Insert('DiscussionPollAnswers', array(
+                      'PollID' => $FormPostValues['PollID'],
+                      'QuestionID' => $QuestionID,
+                      'UserID' => $UserID,
+                      'OptionID' => $FormPostValues[$MemberKey])
+          );
 
-        $this->SQL
-                ->Update('DiscussionPollQuestions')
-                ->Set('CountResponses', 'CountResponses + 1', FALSE)
-                ->Where('QuestionID', $QuestionID)
-                ->Put();
+          $this->SQL
+                  ->Update('DiscussionPollQuestions')
+                  ->Set('CountResponses', 'CountResponses + 1', FALSE)
+                  ->Where('QuestionID', $QuestionID)
+                  ->Put();
 
-        $this->SQL
-                ->Update('DiscussionPollQuestionOptions')
-                ->Set('CountVotes', 'CountVotes + 1', FALSE)
-                ->Where('OptionID', $FormPostValues[$MemberKey])
-                ->Put();
-      }
+          $this->SQL
+                  ->Update('DiscussionPollQuestionOptions')
+                  ->Set('CountVotes', 'CountVotes + 1', FALSE)
+                  ->Where('OptionID', $FormPostValues[$MemberKey])
+                  ->Put();
+        }
+        $this->Database->CommitTransaction();
+     } catch (Exception $Ex) {
+        $this->Database->RollbackTransaction();
+        throw $Ex;
+     }
+        
       return TRUE;
     }
 
@@ -245,10 +263,17 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function Delete($PollID) {
     // TODO: Optimize
-    $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
-    $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
-    $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
-    $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+    try {
+        $this->Database->BeginTransaction();
+        $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
+        $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
+        $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
+        $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+        $this->Database->CommitTransaction();
+     } catch (Exception $Ex) {
+        $this->Database->RollbackTransaction();
+        throw $Ex;
+     }
   }
 
   /**
