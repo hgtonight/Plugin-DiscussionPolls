@@ -214,8 +214,10 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->EventArguments['Options'] .= '<li>' . $Sender->Form->CheckBox('DP_Attach', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)) . '</li>';
 
     // Load up existing poll data
-    $DPModel = new DiscussionPollsModel();
-    $DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
+    if($Sender->Discussion->DiscussionID != NULL) {
+      $DPModel = new DiscussionPollsModel();
+      $DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
+    }
 
     // If there is existing poll data, disable editing
     // Editing will be in a future release
@@ -653,7 +655,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Construct->Table('DiscussionPolls');
     $Construct
             ->PrimaryKey('PollID')
-            ->Column('DiscussionID', 'int', TRUE, 'key')
+            ->Column('DiscussionID', 'int', FALSE, 'key')
             ->Column('Text', 'varchar(140)')
             ->Column('Open', 'tinyint(1)', '1')
             ->Set();
@@ -661,7 +663,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Construct->Table('DiscussionPollQuestions');
     $Construct
             ->PrimaryKey('QuestionID')
-            ->Column('PollID', 'int', TRUE, 'key')
+            ->Column('PollID', 'int', FALSE, 'key')
             ->Column('Text', 'varchar(140)')
             ->Column('CountResponses', 'int', '0')
             ->Set();
@@ -669,8 +671,8 @@ class DiscussionPolls extends Gdn_Plugin {
     $Construct->Table('DiscussionPollQuestionOptions');
     $Construct
             ->PrimaryKey('OptionID')
-            ->Column('QuestionID', 'int', TRUE, 'key')
-            ->Column('PollID', 'int', TRUE, 'key')
+            ->Column('QuestionID', 'int', FALSE, 'key')
+            ->Column('PollID', 'int', FALSE, 'key')
             ->Column('Text', 'varchar(140)')
             ->Column('CountVotes', 'int', '0')
             ->Set();
@@ -678,10 +680,10 @@ class DiscussionPolls extends Gdn_Plugin {
     $Construct->Table('DiscussionPollAnswers');
     $Construct
             ->PrimaryKey('AnswerID')
-            ->Column('PollID', 'int', TRUE, 'key')
-            ->Column('QuestionID', 'int', TRUE, 'key')
-            ->Column('UserID', 'int', TRUE, 'key')
-            ->Column('OptionID', 'int', TRUE, 'key')
+            ->Column('PollID', 'int', FALSE, 'key')
+            ->Column('QuestionID', 'int', FALSE, 'key')
+            ->Column('UserID', 'int', FALSE, 'key')
+            ->Column('OptionID', 'int', FALSE, 'key')
             ->Set();
   }
 
