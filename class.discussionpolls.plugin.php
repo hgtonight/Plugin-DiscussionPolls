@@ -88,7 +88,7 @@ class DiscussionPolls extends Gdn_Plugin {
 
     // You have to have voting privilege only
     if(!$Session->CheckPermission('Plugins.DiscussionPolls.Vote', FALSE) || !$Session->UserID) {
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
+      Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
       Redirect('discussions/' . $FormPostValues->DiscussionID);
     }
 
@@ -99,12 +99,18 @@ class DiscussionPolls extends Gdn_Plugin {
     }
     else {
       $DPModel = new DiscussionPollsModel();
-
+      
+      //check all question are answered if not don't save. 
+      if(!$DPModel->CheckFullyAnswered($FormPostValues)){
+        Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
+        Redirect('discussion/' . $FormPostValues['DiscussionID']);
+      }
       $Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
       if($Saved) {
         Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
       else {
+        Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
         Redirect('discussions');
       }
     }
@@ -171,6 +177,14 @@ class DiscussionPolls extends Gdn_Plugin {
     // Add poll voting resources
     $Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
+    //check for any stashed messages from poll submit
+    $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
+    if($Message){
+      //inform
+      Gdn::Controller()->InformMessage($Message);
+      //pass to form error
+      $Sender->SetData('DiscussionPollsMessage',$Message);
+    }
   }
 
   /**
@@ -612,6 +626,10 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->PollForm = new Gdn_Form();
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
+    
+    //add error message passed through session stash
+    if($Sender->Data('DiscussionPollsMessage'))
+      $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
 
     $Result .= $Sender->PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
     $Result .= $Sender->PollForm->Errors();

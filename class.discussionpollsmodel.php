@@ -256,6 +256,26 @@ class DiscussionPollsModel extends Gdn_Model {
 
     return FALSE;
   }
+  
+  
+  /**
+   * Make sure there are enough answerd question for the poll submition
+   * @param array $FormPostValues
+   * @return boolean 
+   */
+  public function CheckFullyAnswered($FormPostValues) {
+    
+    $Answered = array();
+    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID){
+      $MemberKey = 'DP_Answer' . $Index;
+      if(GetValue($MemberKey,$FormPostValues))
+        $Answered[$QuestionID] = $FormPostValues[$MemberKey];
+    }
+    
+    $Poll = $this->Get($FormPostValues['PollID']);
+    return count((array)$Poll->Questions) == count($Answered);
+      
+  }
 
   /**
    * Removes all data associated with the poll id
