@@ -683,7 +683,7 @@ class DiscussionPolls extends Gdn_Plugin {
             ->Column('PollID', 'int', FALSE, 'key')
             ->Column('QuestionID', 'int', FALSE, 'key')
             ->Column('UserID', 'int', FALSE, 'key')
-            ->Column('OptionID', 'int', FALSE, 'key')
+            ->Column('OptionID', 'int', TRUE, 'key')
             ->Set();
   }
 
