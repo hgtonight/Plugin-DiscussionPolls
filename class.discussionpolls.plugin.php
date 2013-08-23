@@ -97,9 +97,9 @@ class DiscussionPolls extends Gdn_Plugin {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
         Redirect('discussions/' . $FormPostValues['DiscussionID']);
       }
-      
+
       $DPModel = new DiscussionPollsModel();
-      
+
       //check all question are answered if not don't save. 
       if(!$DPModel->CheckFullyAnswered($FormPostValues)){
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
@@ -198,14 +198,12 @@ class DiscussionPolls extends Gdn_Plugin {
     // Add poll creation resources
     $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
-    
     //get question template for jquery poll expansion
     include_once($this->ThemeView('questions'));
     ob_start();
     DiscussionsPollQuestions($Sender->Form);
     $DefaultQuestionString=ob_get_contents();
     ob_end_clean();
-    
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
   }
 
@@ -261,7 +259,7 @@ class DiscussionPolls extends Gdn_Plugin {
 
     // The opening of the form
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
-    
+
     //render form
     DiscussionsPollQuestionForm($Sender->Form,$DiscussionPoll,$Disabled,$Closed);
   }
@@ -529,28 +527,26 @@ class DiscussionPolls extends Gdn_Plugin {
       return $Result;
     }
   }
-  
-	/* 
-	 * Set view that can be copied over to current theme
-	 * e.g. view -> current_theme/views/plugins/DiscussionPolls/view.php
-   * @param View name of the view
-	 */
-	
-	public function ThemeView($View){
-		$ThemeViewLoc = CombinePaths(array(
-			PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder()
-		));
-    
-		if(file_exists($ThemeViewLoc.DS.$View.'.php')){
-			$View=$ThemeViewLoc.DS.$View.'.php';
-		}else{
-			$View=$this->GetView($View.'.php');
-		}
 
+  /*
+  * Set view that can be copied over to current theme
+  * e.g. view -> current_theme/views/plugins/DiscussionPolls/view.php
+  * @param View name of the view
+  */
+  public function ThemeView($View){
+    $ThemeViewLoc = CombinePaths(array(
+      PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder()
+    ));
 
-		return $View;
-		
-	}
+    if(file_exists($ThemeViewLoc.DS.$View.'.php')){
+      $View=$ThemeViewLoc.DS.$View.'.php';
+    }else{
+      $View=$this->GetView($View.'.php');
+  }
+
+    return $View;
+
+  }
 
   /**
    * Setup database structure for model
