@@ -57,7 +57,7 @@ class DiscussionPolls extends Gdn_Plugin {
     // Makes it look like a dashboard page
     $Sender->AddSideMenu('/dashboard/settings/discussionpolls');
     $Sender->Title('Discussion Polls Settings');
-    $Sender->Render($this->GetView("settings.php"));
+    $Sender->Render($this->GetView('settings.php'));
   }
 
   /**
