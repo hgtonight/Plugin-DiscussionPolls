@@ -57,7 +57,7 @@ class DiscussionPolls extends Gdn_Plugin {
     // Makes it look like a dashboard page
     $Sender->AddSideMenu('/dashboard/settings/discussionpolls');
     $Sender->Title('Discussion Polls Settings');
-    $Sender->Render($this->GetView("settings.php"));
+    $Sender->Render($this->ThemeView('settings'));
   }
 
   /**
@@ -70,12 +70,13 @@ class DiscussionPolls extends Gdn_Plugin {
   }
 
   /**
-   * Default action on /discussion/poll is to redirest to
-   * /discussions
+   * Default action on /discussion/poll is not found
    * @param VanillaController $Sender DiscussionController
    */
   public function Controller_Index($Sender) {
-    Redirect('discussions');
+    //shif request args for implied method
+    array_unshift($Sender->RequestArgs,NULL);
+    $this->Controller_Results($Sender);
   }
 
   /**
@@ -85,19 +86,18 @@ class DiscussionPolls extends Gdn_Plugin {
   public function Controller_Submit($Sender) {
     $Session = Gdn::Session();
     $FormPostValues = $Sender->Form->FormValues();
-
-    // You have to have voting privilege only
-    if(!$Session->CheckPermission('Plugins.DiscussionPolls.Vote', FALSE) || !$Session->UserID) {
-      Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
-      Redirect('discussions/' . $FormPostValues->DiscussionID);
-    }
-
-    // If seeing the form for the first time...
-    if($Sender->Form->AuthenticatedPostBack() === FALSE) {
-      // redirect to the discussions view
-      Redirect('discussions');
+    // not submitting anything
+    if($Sender->Form->AuthenticatedPostBack() === FALSE || !GetValue('DiscussionID',$FormPostValues)) {
+      // throw permission exception
+      throw PermissionException();
     }
     else {
+      // You have to have voting privilege only
+      if(!$Session->CheckPermission('Plugins.DiscussionPolls.Vote', FALSE) || !$Session->UserID) {
+        Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
+        Redirect('discussions/' . $FormPostValues['DiscussionID']);
+      }
+      
       $DPModel = new DiscussionPollsModel();
       
       //check all question are answered if not don't save. 
@@ -111,7 +111,7 @@ class DiscussionPolls extends Gdn_Plugin {
       }
       else {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-        Redirect('discussions');
+        Redirect('discussions'. $FormPostValues['DiscussionID']);
       }
     }
   }
@@ -132,7 +132,7 @@ class DiscussionPolls extends Gdn_Plugin {
     }
     else {
       $Sender->SetData('PollString', $PollResults);
-      $Sender->Render($this->GetView('poll.php'));
+      $Sender->Render($this->ThemeView('poll'));
     }
   }
 
@@ -164,8 +164,11 @@ class DiscussionPolls extends Gdn_Plugin {
       }
       else {
         $Sender->SetData('PollString', $Result);
-        $Sender->Render($this->GetView('poll.php'));
+        $Sender->Render($this->ThemView('poll'));
       }
+    }else{
+      // throw permission exception
+      throw PermissionException();
     }
   }
 
@@ -195,6 +198,15 @@ class DiscussionPolls extends Gdn_Plugin {
     // Add poll creation resources
     $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
+    
+    //get question template for jquery poll expansion
+    include_once($this->ThemeView('questions'));
+    ob_start();
+    DiscussionsPollQuestions($Sender->Form);
+    $DefaultQuestionString=ob_get_contents();
+    ob_end_clean();
+    
+    $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
   }
 
   /**
@@ -249,97 +261,9 @@ class DiscussionPolls extends Gdn_Plugin {
 
     // The opening of the form
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
-
-    echo '<div class="P" id="DP_Form">';
-    echo $Sender->Form->Label('Discussion Poll Title', 'DP_Title');
-    echo Wrap($Sender->Form->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
-
-    echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DP_PreviousQuestion'));
-
-    $QuestionCount = 0;
-    // set and the form data for existing questions and render a form
-    foreach($DiscussionPoll->Questions as $Question) {
-      echo '<fieldset id="DP_Question' . $QuestionCount . '" class="DP_Question">';
-
-      // TODO: Figure out how to get SetValue to work with arrays
-      //$Sender->Form->SetValue('DiscussionPollsQuestions['.$QuestionCount.']', $Question->Title);
-      echo $Sender->Form->Label(
-              'Question #' . ($QuestionCount + 1), 'DP_Questions' . $QuestionCount
-      );
-      echo Wrap(
-              $Sender->Form->TextBox(
-                      'DP_Questions[]', array_merge($Disabled, array(
-                  'value' => $Question->Title,
-                  'id' => 'DP_Questions' . $QuestionCount,
-                  'maxlength' => 100,
-                  'class' => 'InputBox BigInput'
-              ))), 'div', array('class' => 'TextBoxWrapper')
-      );
-
-      $j = 0;
-      foreach($Question->Options as $Option) {
-        echo $Sender->Form->Label(
-                'Option #' . ($j + 1), 'DP_Options' . $QuestionCount . '.' . $i
-        );
-
-        echo Wrap(
-                $Sender->Form->TextBox(
-                        'DP_Options' . $QuestionCount . '[]', array_merge($Disabled, array(
-                    'value' => $Option->Title,
-                    'id' => 'DP_Options' . $QuestionCount . '.' . $i,
-                    'maxlength' => 100,
-                    'class' => 'InputBox BigInput'
-                ))), 'div', array('class' => 'TextBoxWrapper')
-        );
-        $j++;
-      }
-
-      $QuestionCount++;
-      echo '</fieldset>';
-    }
-
-    // If there is no data, render a single question form with 2 options to get started
-    if(!$QuestionCount) {
-      $DefaultQuestionString = '<fieldset id="DP_Question0" class="DP_Question">';
-      $DefaultQuestionString .= $Sender->Form->Label('Question #1', 'DP_Questions0');
-      $DefaultQuestionString .= Wrap(
-              $Sender->Form->TextBox(
-                      'DP_Questions[]', array(
-                  'id' => 'DP_Questions0',
-                  'maxlength' => 100,
-                  'class' => 'InputBox BigInput'
-                      )
-              ), 'div', array('class' => 'TextBoxWrapper')
-      );
-
-      for($i = 0; $i < 2; $i++) {
-        $DefaultQuestionString .= $Sender->Form->Label(
-                'Option #' . ($i + 1), 'DP_Options0.' . $i
-        );
-        $DefaultQuestionString .= Wrap(
-                $Sender->Form->TextBox(
-                        'DP_Options0[]', array(
-                    'id' => 'DP_Options0.' . $i,
-                    'maxlength' => 100,
-                    'class' => 'InputBox BigInput'
-                        )
-                ), 'div', array('class' => 'TextBoxWrapper')
-        );
-      }
-      $DefaultQuestionString .= '</fieldset>';
-      $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
-      echo $DefaultQuestionString;
-    }
-
-    // the end of the form
-    if(!$Closed) {
-      echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
-      echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DP_AddOption'));
-    }
-    else if($QuestionCount > 1) {
-      echo Anchor('Next Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
-    }
-    echo '</div>';
+    
+    //render form
+    DiscussionsPollQuestionForm($Sender->Form,$DiscussionPoll,$Disabled,$Closed);
   }
 
   /**
@@ -566,48 +490,17 @@ class DiscussionPolls extends Gdn_Plugin {
    * @return mixed Will return string if $Echo is false, will return true otherwise
    */
   protected function _RenderResults($Poll, $Echo = TRUE) {
-    $Result = '<div class="DP_ResultsForm">';
-    $Result .= $Poll->Title;
-
-    $Result .= '<ol class="DP_ResultQuestions">';
-    foreach($Poll->Questions as $Question) {
-      $Result .= '<li class="DP_ResultQuestion">';
-      $Result .= Wrap($Question->Title, 'span');
-      $Result .= Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
-
-      // k is used to have different option bar colors
-      $k = $Question->QuestionID % 10;
-      $Result .= '<ol class="DP_ResultOptions">';
-      foreach($Question->Options as $Option) {
-        $string = Wrap($Option->Title, 'div');
-        $Percentage = number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
-        if($Percentage < 10) {
-          $Percentage = $Percentage . '%';
-          // put the text on the outside
-          $string .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . ';">&nbsp</span>' . $Percentage;
-        }
-        else {
-          $Percentage = $Percentage . '%';
-          // put the text on the inside
-          $string .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . ';">' . $Percentage . '</span>';
-        }
-
-        $Result .= Wrap($string, 'li', array('class' => 'DP_ResultOption'));
-
-        $k++;
-        $k = $k % 10;
-      }
-      $Result .= '</ol>';
-      $Result .= '</li>';
-    }
-    $Result .= '</ol>';
-    $Result .= '</div>';
+    include($this->ThemeView('results'));
 
     if($Echo) {
-      echo $Result;
+      DiscussionsPollResults($Poll);
       return TRUE;
     }
     else {
+      ob_start();
+      DiscussionsPollResults($Poll);
+      $Result=ob_get_contents();
+      ob_end_clean();
       return $Result;
     }
   }
@@ -620,48 +513,44 @@ class DiscussionPolls extends Gdn_Plugin {
    * @return mixed Will return string if $Echo is false, will return true otherwise
    */
   protected function _RenderVotingForm($Sender, $Poll, $Echo = TRUE) {
-    // Render the submission form
-    $Result = '<div class="DP_AnswerForm">';
-    $Result .= $Poll->Title;
     $Sender->PollForm = new Gdn_Form();
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
-    
-    //add error message passed through session stash
-    if($Sender->Data('DiscussionPollsMessage'))
-      $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
-
-    $Result .= $Sender->PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
-    $Result .= $Sender->PollForm->Errors();
-
-    $m = 0;
-    // Render poll questions
-    $Result .= '<ol class="DP_AnswerQuestions">';
-    foreach($Poll->Questions as $Question) {
-      $Result .= '<li class="DP_AnswerQuestion">';
-      $Result .= $Sender->PollForm->Hidden('DP_AnswerQuestions[]', array('value' => $Question->QuestionID));
-      $Result .= Wrap($Question->Title, 'span');
-      $Result .= '<ol class="DP_AnswerOptions">';
-      foreach($Question->Options as $Option) {
-        $Result .= Wrap($Sender->PollForm->Radio('DP_Answer' . $m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
-      }
-      $Result .= '</ol>';
-      $Result .= '</li>';
-      $m++;
-    }
-    $Result .= '</ol>';
-
-    $Result .= $Sender->PollForm->Close('Submit');
-    $Result .= '</div>';
-
+    include($this->ThemeView('voting'));
     if($Echo) {
-      echo $Result;
+      DiscussionsPollAnswerForm($Sender->PollForm, $Poll);
       return TRUE;
     }
     else {
+      ob_start();
+      DiscussionsPollAnswerForm($Sender->PollForm, $Poll);
+      $Result=ob_get_contents();
+      ob_end_clean();
       return $Result;
     }
   }
+  
+	/* 
+	 * Set view that can be copied over to current theme
+	 * e.g. view -> current_theme/views/plugins/DiscussionPolls/view.php
+   * @param View name of the view
+	 */
+	
+	public function ThemeView($View){
+		$ThemeViewLoc = CombinePaths(array(
+			PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder()
+		));
+    
+		if(file_exists($ThemeViewLoc.DS.$View.'.php')){
+			$View=$ThemeViewLoc.DS.$View.'.php';
+		}else{
+			$View=$this->GetView($View.'.php');
+		}
+
+
+		return $View;
+		
+	}
 
   /**
    * Setup database structure for model
