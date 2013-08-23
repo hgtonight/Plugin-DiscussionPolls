@@ -136,10 +136,8 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param array $FormPostValues
    */
   public function Save($FormPostValues) {
-    // TODO: Optimize
     // Insert the poll
-
-   try {
+    try {
       $this->Database->BeginTransaction();
 
       $this->SQL->Insert('DiscussionPolls', array(
@@ -185,10 +183,10 @@ class DiscussionPollsModel extends Gdn_Model {
       }
 
       $this->Database->CommitTransaction();
-   } catch (Exception $Ex) {
+    } catch(Exception $Ex) {
       $this->Database->RollbackTransaction();
       throw $Ex;
-   }
+    }
   }
 
   /**
@@ -216,7 +214,6 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean False indicates the user has already voted
    */
   public function SaveAnswer($FormPostValues, $UserID) {
-    // TODO: Optimize
     if($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
       return FALSE;
     }
@@ -246,35 +243,35 @@ class DiscussionPollsModel extends Gdn_Model {
                   ->Put();
         }
         $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
+      } catch(Exception $Ex) {
         $this->Database->RollbackTransaction();
         throw $Ex;
-     }
-        
+      }
+
       return TRUE;
     }
 
     return FALSE;
   }
-  
-  
+
   /**
    * Make sure there are enough answerd question for the poll submition
    * @param array $FormPostValues
    * @return boolean 
    */
   public function CheckFullyAnswered($FormPostValues) {
-    
+
     $Answered = array();
-    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID){
+    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
       $MemberKey = 'DP_Answer' . $Index;
-      if(GetValue($MemberKey,$FormPostValues))
+      if(GetValue($MemberKey, $FormPostValues)) {
         $Answered[$QuestionID] = $FormPostValues[$MemberKey];
+      }
     }
-    
+
     $Poll = $this->Get($FormPostValues['PollID']);
-    return count((array)$Poll->Questions) == count($Answered);
-      
+    
+    return count((array) $Poll->Questions) == count($Answered);
   }
 
   /**
@@ -282,18 +279,17 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param int $PollID
    */
   public function Delete($PollID) {
-    // TODO: Optimize
     try {
-        $this->Database->BeginTransaction();
-        $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
-        $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
-        $this->Database->RollbackTransaction();
-        throw $Ex;
-     }
+      $this->Database->BeginTransaction();
+      $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+      $this->Database->CommitTransaction();
+    } catch(Exception $Ex) {
+      $this->Database->RollbackTransaction();
+      throw $Ex;
+    }
   }
 
   /**

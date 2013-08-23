@@ -38,7 +38,8 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function SettingsController_DiscussionPolls_Create($Sender) {
     $Sender->Permission('Garden.Settings.Manage');
-
+    $Sender->AddCSSFile($this->GetResource('design/settings.discussionpolls.css', FALSE, FALSE));
+    
     $Validation = new Gdn_Validation();
     $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
     $ConfigurationModel->SetField(array('Plugins.DiscussionPolls.EnableShowResults'));
@@ -99,9 +100,9 @@ class DiscussionPolls extends Gdn_Plugin {
     }
     else {
       $DPModel = new DiscussionPollsModel();
-      
+
       //check all question are answered if not don't save. 
-      if(!$DPModel->CheckFullyAnswered($FormPostValues)){
+      if(!$DPModel->CheckFullyAnswered($FormPostValues)) {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
         Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
@@ -141,7 +142,6 @@ class DiscussionPolls extends Gdn_Plugin {
    * This will only be seen on legacy systems without JS
    * @param VanillaController $Sender DiscussionController
    */
-
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -179,11 +179,11 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
     //check for any stashed messages from poll submit
     $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
-    if($Message){
+    if($Message) {
       //inform
       Gdn::Controller()->InformMessage($Message);
       //pass to form error
-      $Sender->SetData('DiscussionPollsMessage',$Message);
+      $Sender->SetData('DiscussionPollsMessage', $Message);
     }
   }
 
@@ -626,7 +626,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->PollForm = new Gdn_Form();
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
-    
+
     //add error message passed through session stash
     if($Sender->Data('DiscussionPollsMessage'))
       $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
