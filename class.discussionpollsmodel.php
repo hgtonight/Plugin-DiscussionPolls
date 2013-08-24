@@ -208,6 +208,32 @@ class DiscussionPollsModel extends Gdn_Model {
     $Result = $this->SQL->Get()->Result();
     return !empty($Result);
   }
+  
+  /**
+   * Returns whether or not a user has partially answered a poll
+   * @param int $PollID
+   * @param int $UserID
+   * @return mixed false or result
+   */
+  public function PartialAnswer($PollID, $UserID) {
+    $this->SQL
+            ->Select('pa.*')
+            ->From('DiscussionPollAnswerPartial pa')
+            ->Where('pa.PollID', $PollID)
+            ->Where('pa.UserID', $UserID);
+    $Answered = array();
+    $Answers = $this->SQL->Get()->Result();
+    
+    if(empty($Answers))
+      return $Answered;
+      
+    //create simple lookup
+    foreach($Answers As $Answer)
+      $Answered[$Answer->QuestionID] = $Answer->OptionID;
+      
+    return $Answered;
+  }
+
 
   /**
    * Inserts a poll vote for a specific user
@@ -216,6 +242,9 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean False indicates the user has already voted
    */
   public function SaveAnswer($FormPostValues, $UserID) {
+    //remove partial answers
+    $this->PurgePartialAnswers($FormPostValues['PollID'],$UserID);
+    
     // TODO: Optimize
     if($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
       return FALSE;
@@ -256,6 +285,54 @@ class DiscussionPollsModel extends Gdn_Model {
 
     return FALSE;
   }
+  
+  
+  /**
+   * Stashes Partial Answers
+   * @param array $FormPostValues
+   * @param int $UserID
+   * @return boolean False if nothing saved
+   */
+  public function SavePartialAnswer($FormPostValues, $UserID) {
+      $Return = FALSE;
+      try {
+        $this->Database->BeginTransaction();
+        //remove partial answers
+        $this->PurgePartialAnswers($FormPostValues['PollID'],$UserID);
+        foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+          $MemberKey = 'DP_Answer' . $Index;
+          //ensure no null values
+          if(GetValue($MemberKey,$FormPostValues)){
+            $this->SQL
+                    ->Insert('DiscussionPollAnswerPartial', array(
+                        'PollID' => $FormPostValues['PollID'],
+                        'QuestionID' => $QuestionID,
+                        'UserID' => $UserID,
+                        'OptionID' => $FormPostValues[$MemberKey])
+            );
+          }
+          $Return = TRUE;
+        }
+         
+        $this->Database->CommitTransaction();
+     } catch (Exception $Ex) {
+
+        $this->Database->RollbackTransaction();
+     }
+        
+      return $Return;
+  }
+  
+  /**
+   * Remove Partial Answers from the database
+   * @param int $PollID
+   * @param int $UserID
+   * @return boolean 
+   */
+  public function PurgePartialAnswers($PollID, $UserID) {
+      return $this->SQL->Delete('DiscussionPollAnswerPartial', array('PollID' => $PollID, 'UserID' =>$UserID));
+  }
+  
   
   
   /**

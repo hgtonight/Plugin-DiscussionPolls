@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.0.1',
+    'Version' => '1.0.3',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -74,7 +74,7 @@ class DiscussionPolls extends Gdn_Plugin {
    * @param VanillaController $Sender DiscussionController
    */
   public function Controller_Index($Sender) {
-    //shif request args for implied method
+    //shift request args for implied method
     array_unshift($Sender->RequestArgs,NULL);
     $this->Controller_Results($Sender);
   }
@@ -102,6 +102,8 @@ class DiscussionPolls extends Gdn_Plugin {
 
       //check all question are answered if not don't save. 
       if(!$DPModel->CheckFullyAnswered($FormPostValues)){
+        //save partial answers
+        $DPModel->SavePartialAnswer($FormPostValues,$Session->UserID);
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
         Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
@@ -199,11 +201,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
     //get question template for jquery poll expansion
-    include_once($this->ThemeView('questions'));
-    ob_start();
-    DiscussionsPollQuestions($Sender->Form);
-    $DefaultQuestionString=ob_get_contents();
-    ob_end_clean();
+    $DefaultQuestionString=$this->_RenderQuestionFields($Sender->Form, FALSE);
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
   }
 
@@ -261,7 +259,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
 
     //render form
-    DiscussionsPollQuestionForm($Sender->Form,$DiscussionPoll,$Disabled,$Closed);
+    DiscussionPollQuestionForm($Sender->Form,$DiscussionPoll,$Disabled,$Closed);
   }
 
   /**
@@ -446,8 +444,14 @@ class DiscussionPolls extends Gdn_Plugin {
         $this->_RenderResults($Poll);
       }
       else {
+
+        $PartialAnswers = $DPModel->PartialAnswer($Poll->PollID, $Session->UserID);
+        //if some saved partial answers inform
+        if(!empty($PartialAnswers)){
+          Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.SavedPartial', 'We have saved your completed questions.'));
+        }
         // Render the submission form
-        $this->_RenderVotingForm($Sender, $Poll, $Session->UserID);
+        $this->_RenderVotingForm($Sender, $Poll, $PartialAnswers);
       }
 
       // Render poll tools
@@ -491,12 +495,34 @@ class DiscussionPolls extends Gdn_Plugin {
     include($this->ThemeView('results'));
 
     if($Echo) {
-      DiscussionsPollResults($Poll);
+      DiscussionPollResults($Poll);
       return TRUE;
     }
     else {
       ob_start();
-      DiscussionsPollResults($Poll);
+      DiscussionPollResults($Poll);
+      $Result=ob_get_contents();
+      ob_end_clean();
+      return $Result;
+    }
+  }
+
+  /**
+   * Renders / fetches question fields for form
+   * @param stdClass $Poll the poll object we are rendering
+   * @param boolean $Echo echo or return result string
+   * @return mixed Will return string if $Echo is false, will return true otherwise
+   */
+  protected function _RenderQuestionFields($PollForm, $Echo = TRUE) {
+    include_once($this->ThemeView('questions'));
+
+    if($Echo) {
+      DiscussionPollQuestionFields($PollForm);
+      return TRUE;
+    }
+    else {
+      ob_start();
+      DiscussionPollQuestionFields($PollForm);
       $Result=ob_get_contents();
       ob_end_clean();
       return $Result;
@@ -510,18 +536,21 @@ class DiscussionPolls extends Gdn_Plugin {
    * @param boolean $Echo echo or return result string
    * @return mixed Will return string if $Echo is false, will return true otherwise
    */
-  protected function _RenderVotingForm($Sender, $Poll, $Echo = TRUE) {
+  protected function _RenderVotingForm($Sender, $Poll, $PartialAnswers, $Echo = TRUE) {
     $Sender->PollForm = new Gdn_Form();
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
-    include($this->ThemeView('voting'));
+    if($Sender->Data('DiscussionPollsMessage'))
+      $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
+
+    include_once($this->ThemeView('voting'));
     if($Echo) {
-      DiscussionsPollAnswerForm($Sender->PollForm, $Poll);
+      DiscussionPollAnswerForm($Sender->PollForm, $Poll, $PartialAnswers);
       return TRUE;
     }
     else {
       ob_start();
-      DiscussionsPollAnswerForm($Sender->PollForm, $Poll);
+      DiscussionPollAnswerForm($Sender->PollForm, $Poll, $PartialAnswers);
       $Result=ob_get_contents();
       ob_end_clean();
       return $Result;
@@ -546,6 +575,23 @@ class DiscussionPolls extends Gdn_Plugin {
 
     return $View;
 
+  }
+
+  public function Base_BeforeDispatch_Handler($Sender){
+    //check for updates
+    $this->HotLoad();
+  }
+
+  /*
+  * Set Hot load setup,etc without having to re-enable the plugin
+  * based on version number
+  * @param View name of the view
+  */
+  public function HotLoad($Force =  FALSE) {
+    if(C('Plugins.'.$this->GetPluginIndex().'.Version')!=$this->PluginInfo['Version']){
+      $this->Setup();	 
+      SaveToConfig('Plugins.'.$this->GetPluginIndex().'.Version', $this->PluginInfo['Version']);
+    }
   }
 
   /**
@@ -587,6 +633,14 @@ class DiscussionPolls extends Gdn_Plugin {
             ->Column('QuestionID', 'int', FALSE, 'key')
             ->Column('UserID', 'int', FALSE, 'key')
             ->Column('OptionID', 'int', TRUE, 'key')
+            ->Set();
+    
+    $Construct->Table('DiscussionPollAnswerPartial');
+    $Construct
+            ->Column('PollID', 'int', FALSE, 'index.1') // multicolumn for quick lookup
+            ->Column('QuestionID', 'int', FALSE)
+            ->Column('UserID', 'int', FALSE, 'index.1')
+            ->Column('OptionID', 'int', FALSE)
             ->Set();
   }
 
