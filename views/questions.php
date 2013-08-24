@@ -1,5 +1,5 @@
 <?php if(!defined('APPLICATION')) exit(); 
-function DiscussionsPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed){
+function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed){
 ?>
   <div class="P" id="DP_Form">
   <?php
@@ -55,7 +55,7 @@ function DiscussionsPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed
 
   // If there is no data, render a single question form with 2 options to get started
   if(!$QuestionCount) {
-    DiscussionsPollQuestions($PollForm);
+    DiscussionPollQuestionFields($PollForm);
   }
 
   // the end of the form
@@ -71,7 +71,7 @@ function DiscussionsPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed
   <?php
 }
 
-function DiscussionsPollQuestions($PollForm){
+function DiscussionPollQuestionFields($PollForm){
   ?>
   <fieldset id="DP_Question0" class="DP_Question">
   <?php

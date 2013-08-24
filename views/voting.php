@@ -1,5 +1,5 @@
 <?php if(!defined('APPLICATION')) exit(); 
-function DiscussionsPollAnswerForm($PollForm,$Poll){
+function DiscussionPollAnswerForm($PollForm,$Poll){
 ?>
 <div class="DP_AnswerForm">
     <?php 
