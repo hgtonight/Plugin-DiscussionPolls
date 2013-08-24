@@ -1,5 +1,5 @@
 <?php if(!defined('APPLICATION')) exit(); 
-function DiscussionPollAnswerForm($PollForm,$Poll){
+function DiscussionPollAnswerForm($PollForm,$Poll,$PartialAnswers){
 ?>
 <div class="DP_AnswerForm">
     <?php 
@@ -22,7 +22,12 @@ function DiscussionPollAnswerForm($PollForm,$Poll){
         <ol class="DP_AnswerOptions">
         <?php
         foreach($Question->Options as $Option) {
-          echo Wrap($PollForm->Radio('DP_Answer' . $m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
+          if(GetValue($Question->QuestionID,$PartialAnswers)==$Option->OptionID){
+            //fill in partial answer
+            echo Wrap($PollForm->Radio('DP_Answer' . $m, $Option->Title, array('Value' => $Option->OptionID,'checked'=>'checked')), 'li');
+          }else{
+            echo Wrap($PollForm->Radio('DP_Answer' . $m, $Option->Title, array('Value' => $Option->OptionID)), 'li');
+          }
         }
         ?>
         </ol>
