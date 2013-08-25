@@ -23,7 +23,7 @@ $PluginInfo['DiscussionPolls'] = array(
     'Author' => 'Zachary Doll',
     'AuthorEmail' => 'hgtonight@daklutz.com ',
     'AuthorUrl' => 'http://www.daklutz.com',
-    'License' => 'All rights reserved. Do not distribute.'
+    'License' => 'GPLv3'
 );
 
 class DiscussionPolls extends Gdn_Plugin {
