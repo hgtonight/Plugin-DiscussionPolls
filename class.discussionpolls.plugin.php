@@ -564,7 +564,7 @@ class DiscussionPolls extends Gdn_Plugin {
   */
   public function ThemeView($View){
     $ThemeViewLoc = CombinePaths(array(
-      PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder()
+      PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder(FALSE)
     ));
 
     if(file_exists($ThemeViewLoc.DS.$View.'.php')){
