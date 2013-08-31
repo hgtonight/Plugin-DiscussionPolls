@@ -16,14 +16,14 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.0.1',
+    'Version' => '1.1',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
     'Author' => 'Zachary Doll',
     'AuthorEmail' => 'hgtonight@daklutz.com ',
     'AuthorUrl' => 'http://www.daklutz.com',
-    'License' => 'All rights reserved. Do not distribute.'
+    'License' => 'GPLv3'
 );
 
 class DiscussionPolls extends Gdn_Plugin {
@@ -38,7 +38,8 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function SettingsController_DiscussionPolls_Create($Sender) {
     $Sender->Permission('Garden.Settings.Manage');
-
+    $Sender->AddCSSFile($this->GetResource('design/settings.discussionpolls.css', FALSE, FALSE));
+    
     $Validation = new Gdn_Validation();
     $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
     $ConfigurationModel->SetField(array('Plugins.DiscussionPolls.EnableShowResults'));
@@ -101,7 +102,7 @@ class DiscussionPolls extends Gdn_Plugin {
       $DPModel = new DiscussionPollsModel();
 
       //check all question are answered if not don't save. 
-      if(!$DPModel->CheckFullyAnswered($FormPostValues)){
+      if(!$DPModel->CheckFullyAnswered($FormPostValues)) {
         //save partial answers
         $DPModel->SavePartialAnswer($FormPostValues,$Session->UserID);
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
@@ -143,7 +144,6 @@ class DiscussionPolls extends Gdn_Plugin {
    * This will only be seen on legacy systems without JS
    * @param VanillaController $Sender DiscussionController
    */
-
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -184,11 +184,11 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
     //check for any stashed messages from poll submit
     $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
-    if($Message){
+    if($Message) {
       //inform
       Gdn::Controller()->InformMessage($Message);
       //pass to form error
-      $Sender->SetData('DiscussionPollsMessage',$Message);
+      $Sender->SetData('DiscussionPollsMessage', $Message);
     }
   }
 
@@ -540,6 +540,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->PollForm = new Gdn_Form();
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
+
     if($Sender->Data('DiscussionPollsMessage'))
       $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
 
@@ -575,23 +576,6 @@ class DiscussionPolls extends Gdn_Plugin {
 
     return $View;
 
-  }
-
-  public function Base_BeforeDispatch_Handler($Sender){
-    //check for updates
-    $this->HotLoad();
-  }
-
-  /*
-  * Set Hot load setup,etc without having to re-enable the plugin
-  * based on version number
-  * @param View name of the view
-  */
-  public function HotLoad($Force =  FALSE) {
-    if(C('Plugins.'.$this->GetPluginIndex().'.Version')!=$this->PluginInfo['Version']){
-      $this->Setup();	 
-      SaveToConfig('Plugins.'.$this->GetPluginIndex().'.Version', $this->PluginInfo['Version']);
-    }
   }
 
   /**

@@ -13,10 +13,11 @@
  * 	You should have received a copy of the GNU General Public License
  * 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 class DiscussionPollsModel extends Gdn_Model {
 
   //query cache
-  private static $Cache = array('Exists'=> array(), 'Answered'=> array(), 'Responses'=> array(), 'Partial'=> array(), 'Get' => array());
+  private static $Cache = array('Exists' => array(), 'Answered' => array(), 'Responses' => array(), 'Partial' => array(), 'Get' => array());
 
   /**
    * Class constructor. Defines the related database table name.
@@ -33,7 +34,7 @@ class DiscussionPollsModel extends Gdn_Model {
   public function Exists($DiscussionID) {
 
     //check for cached result
-    $Data = GetValueR('Exists.'.$DiscussionID,self::$Cache);
+    $Data = GetValueR('Exists.' . $DiscussionID, self::$Cache);
 
     if(!empty($Data))
       return TRUE;
@@ -56,7 +57,7 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function HasResponses($DiscussionID) {
     //check for cached result
-    $Data = GetValueR('Responses.'.$DiscussionID,self::$Cache);
+    $Data = GetValueR('Responses.' . $DiscussionID, self::$Cache);
 
     if(!empty($Data))
       return $Data;
@@ -80,7 +81,7 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function Get($PollID) {
     //check for cached result
-    $Data = GetValueR('Get.'.$PollID,self::$Cache);
+    $Data = GetValueR('Get.' . $PollID, self::$Cache);
 
     if(!empty($Data))
       return $Data;
@@ -151,17 +152,18 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function GetByDiscussionID($DiscussionID) {
     //check for cached result
-    $Data = GetValueR('Exists.'.$DiscussionID,self::$Cache);
-    
-    if(!empty($Data)){
+    $Data = GetValueR('Exists.' . $DiscussionID, self::$Cache);
+
+    if(!empty($Data)) {
       $PollID = $Data->PollID;
-    }else{
+    }
+    else {
       $this->SQL
               ->Select('p.PollID')
               ->From('DiscussionPolls p')
               ->Where('p.DiscussionID', $DiscussionID);
-              
-      
+
+
 
       $Data = $this->SQL->Get()->FirstRow();
       //store in cache
@@ -177,61 +179,59 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param array $FormPostValues
    */
   public function Save($FormPostValues) {
-    // TODO: Optimize
-    // Insert the poll
-
     //paranoid
     self::PurgeCache();
-     try {
-        $this->Database->BeginTransaction();
+    try {
+      $this->Database->BeginTransaction();
 
-        $this->SQL->Insert('DiscussionPolls', array(
-            'DiscussionID' => $FormPostValues['DiscussionID'],
-            'Text' => $FormPostValues['DP_Title']));
+      $this->SQL->Insert('DiscussionPolls', array(
+          'DiscussionID' => $FormPostValues['DiscussionID'],
+          'Text' => $FormPostValues['DP_Title']));
 
-        // Select the poll ID
+      // Select the poll ID
+      $this->SQL
+              ->Select('p.PollID')
+              ->From('DiscussionPolls p')
+              ->Where('p.DiscussionID', $FormPostValues['DiscussionID']);
+
+      $PollID = $this->SQL->Get()->FirstRow()->PollID;
+
+      // Insert the questions
+      foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
         $this->SQL
-                ->Select('p.PollID')
-                ->From('DiscussionPolls p')
-                ->Where('p.DiscussionID', $FormPostValues['DiscussionID']);
+                ->Insert('DiscussionPollQuestions', array(
+                    'PollID' => $PollID,
+                    'Text' => $Question)
+        );
+      }
 
-        $PollID = $this->SQL->Get()->FirstRow()->PollID;
+      // Select the question IDs
+      $this->SQL
+              ->Select('q.QuestionID')
+              ->From('DiscussionPollQuestions q')
+              ->Where('q.PollID', $PollID);
+      $QuestionIDs = $this->SQL->Get()->Result();
 
-        // Insert the questions
-        foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
+      // Insert the Options
+      foreach($QuestionIDs as $Index => $QuestionID) {
+        $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
+        //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
+        foreach($QuestionOptions as $Option) {
           $this->SQL
-                  ->Insert('DiscussionPollQuestions', array(
+                  ->Insert('DiscussionPollQuestionOptions', array(
+                      'QuestionID' => $QuestionID->QuestionID,
                       'PollID' => $PollID,
-                      'Text' => $Question)
+                      'Text' => $Option)
           );
         }
+      }
 
-        // Select the question IDs
-        $this->SQL
-                ->Select('q.QuestionID')
-                ->From('DiscussionPollQuestions q')
-                ->Where('q.PollID', $PollID);
-        $QuestionIDs = $this->SQL->Get()->Result();
-
-        // Insert the Options
-        foreach($QuestionIDs as $Index => $QuestionID) {
-          $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
-          //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
-          foreach($QuestionOptions as $Option) {
-            $this->SQL
-                    ->Insert('DiscussionPollQuestionOptions', array(
-                        'QuestionID' => $QuestionID->QuestionID,
-                        'PollID' => $PollID,
-                        'Text' => $Option)
-            );
-          }
-        }
-
-        $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
-        $this->Database->RollbackTransaction();
-        throw $Ex;
-     }
+      $this->Database->CommitTransaction();
+    }
+    catch(Exception $Ex) {
+      $this->Database->RollbackTransaction();
+      throw $Ex;
+    }
   }
 
   /**
@@ -242,8 +242,8 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function HasAnswered($PollID, $UserID) {
     //check for cached result
-    $Data = GetValueR('Answered.'.$PollID.'_'.$UserID,self::$Cache);
-    
+    $Data = GetValueR('Answered.' . $PollID . '_' . $UserID, self::$Cache);
+
     if(!empty($Data))
       return TRUE;
 
@@ -256,7 +256,7 @@ class DiscussionPollsModel extends Gdn_Model {
 
     $Result = $this->SQL->Get()->Result();
     //store in cache
-    self::$Cache['Answered'][$PollID.'_'.$UserID] = $Result;
+    self::$Cache['Answered'][$PollID . '_' . $UserID] = $Result;
     return !empty($Result);
   }
 
@@ -268,8 +268,8 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function PartialAnswer($PollID, $UserID) {
     //check for cached result
-    $Data = GetValueR('Partial.'.$PollID.'_'.$UserID,self::$Cache);
-    
+    $Data = GetValueR('Partial.' . $PollID . '_' . $UserID, self::$Cache);
+
     if(!empty($Data))
       return $Data;
 
@@ -288,10 +288,9 @@ class DiscussionPollsModel extends Gdn_Model {
     foreach($Answers As $Answer)
       $Answered[$Answer->QuestionID] = $Answer->OptionID;
     //store in cache
-    self::$Cache['Partial'][$PollID.'_'.$UserID] = $Answered;
+    self::$Cache['Partial'][$PollID . '_' . $UserID] = $Answered;
     return $Answered;
   }
-
 
   /**
    * Inserts a poll vote for a specific user
@@ -301,12 +300,11 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public function SaveAnswer($FormPostValues, $UserID) {
     //remove partial answers
-    $this->PurgePartialAnswers($FormPostValues['PollID'],$UserID);
-    
+    $this->PurgePartialAnswers($FormPostValues['PollID'], $UserID);
+
     //paranoid
     self::PurgeCache();
-    
-    // TODO: Optimize
+
     if($this->HasAnswered($FormPostValues['PollID'], $UserID)) {
       return FALSE;
     }
@@ -336,11 +334,11 @@ class DiscussionPollsModel extends Gdn_Model {
                   ->Put();
         }
         $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
+      }
+      catch(Exception $Ex) {
         $this->Database->RollbackTransaction();
         throw $Ex;
-     }
-
+      }
       return TRUE;
     }
 
@@ -354,33 +352,34 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean False if nothing saved
    */
   public function SavePartialAnswer($FormPostValues, $UserID) {
-      $Return = FALSE;
-      try {
-        $this->Database->BeginTransaction();
-        //remove partial answers
-        $this->PurgePartialAnswers($FormPostValues['PollID'],$UserID);
-        foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
-          $MemberKey = 'DP_Answer' . $Index;
-          //ensure no null values
-          if(GetValue($MemberKey,$FormPostValues)){
-            $this->SQL
-                    ->Insert('DiscussionPollAnswerPartial', array(
-                        'PollID' => $FormPostValues['PollID'],
-                        'QuestionID' => $QuestionID,
-                        'UserID' => $UserID,
-                        'OptionID' => $FormPostValues[$MemberKey])
-            );
-          }
-          $Return = TRUE;
+    $Return = FALSE;
+    try {
+      $this->Database->BeginTransaction();
+      //remove partial answers
+      $this->PurgePartialAnswers($FormPostValues['PollID'], $UserID);
+      foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+        $MemberKey = 'DP_Answer' . $Index;
+        //ensure no null values
+        if(GetValue($MemberKey, $FormPostValues)) {
+          $this->SQL
+                  ->Insert('DiscussionPollAnswerPartial', array(
+                      'PollID' => $FormPostValues['PollID'],
+                      'QuestionID' => $QuestionID,
+                      'UserID' => $UserID,
+                      'OptionID' => $FormPostValues[$MemberKey])
+          );
         }
+        $Return = TRUE;
+      }
 
-        $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
+      $this->Database->CommitTransaction();
+    }
+    catch(Exception $Ex) {
 
-        $this->Database->RollbackTransaction();
-     }
+      $this->Database->RollbackTransaction();
+    }
 
-      return $Return;
+    return $Return;
   }
 
   /**
@@ -390,12 +389,11 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean 
    */
   public function PurgePartialAnswers($PollID, $UserID) {
-      //purge cache
-      self::$Cache['Partial'][$PollID.'_'.$UserID] = NULL;
-      //remove from db
-      return $this->SQL->Delete('DiscussionPollAnswerPartial', array('PollID' => $PollID, 'UserID' =>$UserID));
+    //purge cache
+    self::$Cache['Partial'][$PollID . '_' . $UserID] = NULL;
+    //remove from db
+    return $this->SQL->Delete('DiscussionPollAnswerPartial', array('PollID' => $PollID, 'UserID' => $UserID));
   }
-
 
   /**
    * Make sure there are enough answered question for the poll submission
@@ -403,38 +401,37 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean 
    */
   public function CheckFullyAnswered($FormPostValues) {
-
     $Answered = array();
-    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID){
+    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
       $MemberKey = 'DP_Answer' . $Index;
-      if(GetValue($MemberKey,$FormPostValues))
+      if(GetValue($MemberKey, $FormPostValues)) {
         $Answered[$QuestionID] = $FormPostValues[$MemberKey];
+      }
     }
-
     $Poll = $this->Get($FormPostValues['PollID']);
-    return count((array)$Poll->Questions) == count($Answered);
 
+    return count((array) $Poll->Questions) == count($Answered);
   }
-  
+
   /**
    * Removes all data associated with the poll id
    * @param int $PollID
    */
   public function Delete($PollID) {
-    // TODO: Optimize
     try {
-        $this->Database->BeginTransaction();
-        $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
-        $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
-        //clear cache
-        self::PurgeCache();
-        $this->Database->CommitTransaction();
-     } catch (Exception $Ex) {
-        $this->Database->RollbackTransaction();
-        throw $Ex;
-     }
+      $this->Database->BeginTransaction();
+      $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+      //clear cache
+      self::PurgeCache();
+      $this->Database->CommitTransaction();
+    }
+    catch(Exception $Ex) {
+      $this->Database->RollbackTransaction();
+      throw $Ex;
+    }
   }
 
   /**
@@ -468,9 +465,9 @@ class DiscussionPollsModel extends Gdn_Model {
   /**
    * Wipes the cache
    */
-  public static function PurgeCache(){
+  public static function PurgeCache() {
     // reset all the store
-    foreach (self::$Cache As &$CachStore)
+    foreach(self::$Cache As &$CachStore)
       $CachStore = array();
   }
 
