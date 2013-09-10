@@ -3,7 +3,7 @@ function DiscussionPollAnswerForm($PollForm,$Poll,$PartialAnswers){
 ?>
 <div class="DP_AnswerForm">
     <?php 
-    echo $PollForm->Title;
+    echo $Poll->Title;
     echo $PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
     echo $PollForm->Errors();
 

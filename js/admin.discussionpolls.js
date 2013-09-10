@@ -62,7 +62,7 @@ jQuery(document).ready(function($) {
   // Add an another option field
   $('#DP_AddOption').click(function(event) {
     event.preventDefault();
-    if(Closed) {
+    if(ExistingPoll) {
       $(this).hide();
     }
     else {
@@ -106,13 +106,13 @@ jQuery(document).ready(function($) {
   // Move to the next question
   $('#DP_NextQuestion').click(function(event) {
     event.preventDefault();
-    if(Closed) {
+    if(ExistingPoll) {
       // find the current question
       var questionNum = $('fieldset.DP_Question:visible').attr('id').replace(/DP_Question(\d+)/g, '$1');
       var nextQuestionNum = parseInt(questionNum) + 1;
       if($('#DP_Question' + nextQuestionNum).length === 0) {
         // Don't animate since there isn't another question
-        $('#DP_NextQuestion').text('');
+        $('#DP_NextQuestion').text('').css('background-image', 'none');
       }
       else {
         // animate to the next question
@@ -123,7 +123,7 @@ jQuery(document).ready(function($) {
 
           nextQuestionNum++;
           if($('#DP_Question' + nextQuestionNum).length === 0) {
-            $('#DP_NextQuestion').text('');
+            $('#DP_NextQuestion').text('').css('background-image', 'none');
           }
         });
       }
@@ -190,7 +190,7 @@ jQuery(document).ready(function($) {
         $('#DP_Question' + previousQuestionNum).fadeIn();
       });
 
-      $('#DP_NextQuestion').text('Next Question');
+      $('#DP_NextQuestion').text('Next Question').css('background-image', '');
     }
 
     if(previousQuestionNum === 0) {
