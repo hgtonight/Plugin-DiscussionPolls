@@ -434,6 +434,24 @@ class DiscussionPollsModel extends Gdn_Model {
       throw $Ex;
     }
   }
+  
+  /**
+   * A convenience method that removes all poll data associated with the
+   * discussion id
+   * @param int $DiscussionID
+   */
+  public function DeleteByDiscussionID($DiscussionID) {
+    // no use caching as delete will wipe it out
+    $this->SQL
+            ->Select('p.PollID')
+            ->From('DiscussionPolls p')
+            ->Where('p.DiscussionID', $DiscussionID);
+
+    $Data = $this->SQL->Get()->FirstRow();
+    $PollID = $Data->PollID;
+
+    return $this->Delete($PollID);
+  }
 
   /**
    * Closes poll associated with the discussion id
