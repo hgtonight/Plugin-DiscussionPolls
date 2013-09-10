@@ -102,7 +102,6 @@ class DiscussionPolls extends Gdn_Plugin {
 
       $DPModel = new DiscussionPollsModel();
 
-      //check all question are answered if not don't save. 
       if(!$DPModel->CheckFullyAnswered($FormPostValues)) {
         //save partial answers
         $DPModel->SavePartialAnswer($FormPostValues, $Session->UserID);
@@ -115,7 +114,7 @@ class DiscussionPolls extends Gdn_Plugin {
       }
       else {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-        Redirect('discussions' . $FormPostValues['DiscussionID']);
+        Redirect('discussions/' . $FormPostValues['DiscussionID']);
       }
     }
   }
