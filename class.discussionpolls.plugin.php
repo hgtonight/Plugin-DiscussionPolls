@@ -39,10 +39,11 @@ class DiscussionPolls extends Gdn_Plugin {
   public function SettingsController_DiscussionPolls_Create($Sender) {
     $Sender->Permission('Garden.Settings.Manage');
     $Sender->AddCSSFile($this->GetResource('design/settings.discussionpolls.css', FALSE, FALSE));
-    
+
     $Validation = new Gdn_Validation();
     $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
     $ConfigurationModel->SetField(array('Plugins.DiscussionPolls.EnableShowResults'));
+    $ConfigurationModel->SetField(array('Plugins.DiscussionPolls.DisablePollTitle'));
 
     $Sender->Form->SetModel($ConfigurationModel);
 
@@ -76,7 +77,7 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function Controller_Index($Sender) {
     //shift request args for implied method
-    array_unshift($Sender->RequestArgs,NULL);
+    array_unshift($Sender->RequestArgs, NULL);
     $this->Controller_Results($Sender);
   }
 
@@ -88,7 +89,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Session = Gdn::Session();
     $FormPostValues = $Sender->Form->FormValues();
     // not submitting anything
-    if($Sender->Form->AuthenticatedPostBack() === FALSE || !GetValue('DiscussionID',$FormPostValues)) {
+    if($Sender->Form->AuthenticatedPostBack() === FALSE || !GetValue('DiscussionID', $FormPostValues)) {
       // throw permission exception
       throw PermissionException();
     }
@@ -104,7 +105,7 @@ class DiscussionPolls extends Gdn_Plugin {
       //check all question are answered if not don't save. 
       if(!$DPModel->CheckFullyAnswered($FormPostValues)) {
         //save partial answers
-        $DPModel->SavePartialAnswer($FormPostValues,$Session->UserID);
+        $DPModel->SavePartialAnswer($FormPostValues, $Session->UserID);
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
         Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
@@ -114,7 +115,7 @@ class DiscussionPolls extends Gdn_Plugin {
       }
       else {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-        Redirect('discussions'. $FormPostValues['DiscussionID']);
+        Redirect('discussions' . $FormPostValues['DiscussionID']);
       }
     }
   }
@@ -144,6 +145,7 @@ class DiscussionPolls extends Gdn_Plugin {
    * This will only be seen on legacy systems without JS
    * @param VanillaController $Sender DiscussionController
    */
+
   public function Controller_Delete($Sender) {
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -168,7 +170,8 @@ class DiscussionPolls extends Gdn_Plugin {
         $Sender->SetData('PollString', $Result);
         $Sender->Render($this->ThemView('poll'));
       }
-    }else{
+    }
+    else {
       // throw permission exception
       throw PermissionException();
     }
@@ -201,7 +204,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
     //get question template for jquery poll expansion
-    $DefaultQuestionString=$this->_RenderQuestionFields($Sender->Form, FALSE);
+    $DefaultQuestionString = $this->_RenderQuestionFields($Sender->Form, FALSE);
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
   }
 
@@ -259,7 +262,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
 
     //render form
-    DiscussionPollQuestionForm($Sender->Form,$DiscussionPoll,$Disabled,$Closed);
+    DiscussionPollQuestionForm($Sender->Form, $DiscussionPoll, $Disabled, $Closed);
   }
 
   /**
@@ -278,7 +281,7 @@ class DiscussionPolls extends Gdn_Plugin {
     // Validate that all poll fields are filled out
     $Invalid = FALSE;
     $Error = '';
-    if(trim($FormPostValues['DP_Title']) == FALSE) {
+    if(trim($FormPostValues['DP_Title']) == FALSE && !C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
       $Invalid = TRUE;
       $Error = 'You must enter a valid poll title!';
     }
@@ -359,7 +362,7 @@ class DiscussionPolls extends Gdn_Plugin {
     // Validate that all poll fields are filled out
     $Invalid = FALSE;
     $Error = '';
-    if(trim($FormPostValues['DP_Title']) == FALSE) {
+    if(trim($FormPostValues['DP_Title']) == FALSE && !C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
       $Invalid = TRUE;
       $Error = 'You must enter a valid poll title!';
     }
@@ -447,7 +450,7 @@ class DiscussionPolls extends Gdn_Plugin {
 
         $PartialAnswers = $DPModel->PartialAnswer($Poll->PollID, $Session->UserID);
         //if some saved partial answers inform
-        if(!empty($PartialAnswers)){
+        if(!empty($PartialAnswers)) {
           Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.SavedPartial', 'We have saved your completed questions.'));
         }
         // Render the submission form
@@ -501,7 +504,7 @@ class DiscussionPolls extends Gdn_Plugin {
     else {
       ob_start();
       DiscussionPollResults($Poll);
-      $Result=ob_get_contents();
+      $Result = ob_get_contents();
       ob_end_clean();
       return $Result;
     }
@@ -523,7 +526,7 @@ class DiscussionPolls extends Gdn_Plugin {
     else {
       ob_start();
       DiscussionPollQuestionFields($PollForm);
-      $Result=ob_get_contents();
+      $Result = ob_get_contents();
       ob_end_clean();
       return $Result;
     }
@@ -552,30 +555,31 @@ class DiscussionPolls extends Gdn_Plugin {
     else {
       ob_start();
       DiscussionPollAnswerForm($Sender->PollForm, $Poll, $PartialAnswers);
-      $Result=ob_get_contents();
+      $Result = ob_get_contents();
       ob_end_clean();
       return $Result;
     }
   }
 
   /*
-  * Set view that can be copied over to current theme
-  * e.g. view -> current_theme/views/plugins/DiscussionPolls/view.php
-  * @param View name of the view
-  */
-  public function ThemeView($View){
+   * Set view that can be copied over to current theme
+   * e.g. view -> current_theme/views/plugins/DiscussionPolls/view.php
+   * @param View name of the view
+   */
+
+  public function ThemeView($View) {
     $ThemeViewLoc = CombinePaths(array(
-      PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder(FALSE)
+        PATH_THEMES, Gdn::Controller()->Theme, 'views', $this->GetPluginFolder(FALSE)
     ));
 
-    if(file_exists($ThemeViewLoc.DS.$View.'.php')){
-      $View=$ThemeViewLoc.DS.$View.'.php';
-    }else{
-      $View=$this->GetView($View.'.php');
-  }
+    if(file_exists($ThemeViewLoc . DS . $View . '.php')) {
+      $View = $ThemeViewLoc . DS . $View . '.php';
+    }
+    else {
+      $View = $this->GetView($View . '.php');
+    }
 
     return $View;
-
   }
 
   /**
@@ -618,7 +622,7 @@ class DiscussionPolls extends Gdn_Plugin {
             ->Column('UserID', 'int', FALSE, 'key')
             ->Column('OptionID', 'int', TRUE, 'key')
             ->Set();
-    
+
     $Construct->Table('DiscussionPollAnswerPartial');
     $Construct
             ->Column('PollID', 'int', FALSE, 'index.1') // multicolumn for quick lookup

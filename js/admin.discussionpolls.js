@@ -17,15 +17,8 @@ jQuery(document).ready(function($) {
   var QuestionString = gdn.definition('DP_EmptyQuestion'); // This is an empty form question; it is used to sidestep differences between 2.0 and 2.1 form functions
   var ExistingPoll = false; // Is this a pre-existing poll page? Assume it is a new page
 
-  // If there is a question string defined, this is a new poll
-  if(QuestionString !== 'DP_EmptyQuestion') {
-    // Hide the form initially
-    $('#DP_Form').hide();
-
-    // Uncheck attach poll initially
-    $('#Form_DP_Attach').prop('checked', false);
-  }
-  else {
+  // If there is input in the first question textbox onload, this is an existing poll
+  if($('#DP_Questions0').val()) {
     ExistingPoll = true;
     // Hide the extra questions and make the buttons make sense
     if($('fieldset.DP_Question').length > 1) {
@@ -34,6 +27,13 @@ jQuery(document).ready(function($) {
 
       $('#DP_NextQuestion').text('Next Question');
     }
+  }
+  else {
+    // Hide the form initially
+    $('#DP_Form').hide();
+
+    // Uncheck attach poll initially
+    $('#Form_DP_Attach').prop('checked', false);
   }
 
   // override the css initially

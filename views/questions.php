@@ -11,9 +11,7 @@ function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed)
   $QuestionCount = 0;
   // set and the form data for existing questions and render a form
   foreach($DiscussionPoll->Questions as $Question) {
-  ?>
-    <fieldset id="DP_Question' . $QuestionCount . '" class="DP_Question">
-  <?php
+    echo '<fieldset id="DP_Question' . $QuestionCount . '" class="DP_Question">';
     // TODO: Figure out how to get SetValue to work with arrays
     //$Sender->Form->SetValue('DiscussionPollsQuestions['.$QuestionCount.']', $Question->Title);
     echo $PollForm->Label(
