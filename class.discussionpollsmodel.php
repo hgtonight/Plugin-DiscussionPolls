@@ -441,16 +441,19 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param int $DiscussionID
    */
   public function DeleteByDiscussionID($DiscussionID) {
-    // no use caching as delete will wipe it out
-    $this->SQL
-            ->Select('p.PollID')
-            ->From('DiscussionPolls p')
-            ->Where('p.DiscussionID', $DiscussionID);
+    // make sure it exists
+    if($this->Exists($DiscussionID)) {
+      // no use caching as delete will wipe it out
+      $this->SQL
+              ->Select('p.PollID')
+              ->From('DiscussionPolls p')
+              ->Where('p.DiscussionID', $DiscussionID);
 
-    $Data = $this->SQL->Get()->FirstRow();
-    $PollID = $Data->PollID;
+      $Data = $this->SQL->Get()->FirstRow();
+      $PollID = $Data->PollID;
 
-    return $this->Delete($PollID);
+      return $this->Delete($PollID);
+    }
   }
 
   /**
