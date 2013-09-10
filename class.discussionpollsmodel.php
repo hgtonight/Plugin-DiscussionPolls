@@ -424,6 +424,7 @@ class DiscussionPollsModel extends Gdn_Model {
       $this->SQL->Delete('DiscussionPollQuestions', array('PollID' => $PollID));
       $this->SQL->Delete('DiscussionPollQuestionOptions', array('PollID' => $PollID));
       $this->SQL->Delete('DiscussionPollAnswers', array('PollID' => $PollID));
+      $this->SQL->Delete('DiscussionPollAnswerPartial', array('PollID' => $PollID));
       //clear cache
       self::PurgeCache();
       $this->Database->CommitTransaction();
@@ -467,8 +468,9 @@ class DiscussionPollsModel extends Gdn_Model {
    */
   public static function PurgeCache() {
     // reset all the store
-    foreach(self::$Cache As &$CachStore)
+    foreach(self::$Cache As &$CachStore) {
       $CachStore = array();
+    }
   }
 
 }
