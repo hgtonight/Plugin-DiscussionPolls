@@ -581,7 +581,7 @@ class DiscussionPolls extends Gdn_Plugin {
   /**
    * Setup database structure for model
    */
-  protected function Structure() {
+  public function Structure() {
     $Database = Gdn::Database();
     $Construct = $Database->Structure();
 
