@@ -106,15 +106,33 @@ class DiscussionPolls extends Gdn_Plugin {
         //save partial answers
         $DPModel->SavePartialAnswer($FormPostValues, $Session->UserID);
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
-        Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        //Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
       $Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
-      if($Saved) {
-        Redirect('discussion/' . $FormPostValues['DiscussionID']);
+      
+      // Return the proper view
+      if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
+        // Used for AJAX poll submission
+        if($Saved) {
+          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        }
+        else {
+          Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
+          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        }
+        
+        
+        $Data = array('html' => $PollResults);
+        echo json_encode($Data);
       }
       else {
-        Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-        Redirect('discussions/' . $FormPostValues['DiscussionID']);
+        if($Saved) {
+          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        }
+        else {
+          Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
+          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        }
       }
     }
   }
@@ -339,7 +357,7 @@ class DiscussionPolls extends Gdn_Plugin {
       // Delete existing poll
       if($DPModel->Exists($DiscussionID)) {
         Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
-        $DPModel->Delete($DiscussionID);
+        $DPModel->DeleteByDiscussionID($DiscussionID);
         return FALSE;
       }
     }

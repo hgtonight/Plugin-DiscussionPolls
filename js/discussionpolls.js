@@ -59,6 +59,39 @@ jQuery(document).ready(function($) {
     }
   });
 
+  // hijack the submission click
+  $('#DP_AnswerForm :submit').click(function(event) {
+    event.preventDefault();
+
+    // Load the result from ajax
+    $.ajax({
+      url: $(this).parents('form').attr('action'),
+      global: false,
+      type: 'GET',
+      data: 'DeliveryType=VIEW',
+      dataType: 'json',
+      success: function(Data) {
+        //
+        console.log(Data);
+//        $('.DP_AnswerForm').after(Data.html);
+//        $('.DP_ResultsForm').hide();
+//
+//        // Repeated here to account for slow hosts
+//        $('.DP_AnswerForm').fadeOut('slow', function() {
+//          $('.DP_ResultsForm').fadeIn('slow');
+//        });
+      }
+    });
+
+    // Bring results to front
+//    $('.DP_AnswerForm').fadeOut('slow', function() {
+//      $('.DP_ResultsForm').fadeIn('slow');
+//    });
+//
+//    // Change tool mode
+//    $(this).html('Show Poll Form');
+  });
+
   // hijack the delete click
   $('#DP_Remove a').popup({
     confirm: true,
