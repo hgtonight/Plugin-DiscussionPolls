@@ -10,7 +10,7 @@ function DiscussionPollAnswerForm($PollForm,$Poll,$PartialAnswers){
         echo '<hr />';
       }
     }
-    echo $PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
+    echo $PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post', 'ajax' => TRUE));
     echo $PollForm->Errors();
 
     $m = 0;

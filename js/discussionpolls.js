@@ -60,36 +60,44 @@ jQuery(document).ready(function($) {
   });
 
   // hijack the submission click
-  $('#DP_AnswerForm :submit').click(function(event) {
+  $('.DP_AnswerForm form').submit(function(event) {
     event.preventDefault();
-
     // Load the result from ajax
     $.ajax({
-      url: $(this).parents('form').attr('action'),
+      url: $(this).attr('action'),
       global: false,
-      type: 'GET',
-      data: 'DeliveryType=VIEW',
+      type: $(this).attr('method'),
+      data: $(this).serialize()+'&DeliveryType=VIEW',
       dataType: 'json',
       success: function(Data) {
-        //
-        console.log(Data);
-//        $('.DP_AnswerForm').after(Data.html);
-//        $('.DP_ResultsForm').hide();
-//
-//        // Repeated here to account for slow hosts
-//        $('.DP_AnswerForm').fadeOut('slow', function() {
-//          $('.DP_ResultsForm').fadeIn('slow');
-//        });
+        switch(Data.type) {
+          case 'Full Poll':
+            // Remove the old results form
+            if($('.DP_ResultsForm').length !== 0) {
+              $('.DP_ResultsForm').remove();
+            }
+            // Insert the new results
+            $('.DP_AnswerForm').after(Data.html);
+            $('.DP_ResultsForm').hide();
+
+            // Remove the answer form after some sweet sweet animation
+            $('.DP_AnswerForm').fadeOut('slow', function() {
+              $('.DP_ResultsForm').fadeIn('slow', function() {
+                $('.DP_AnswerForm').remove();
+              });
+            });
+
+            // update tools
+            $('#DP_Results').slideUp();
+            break;
+          default:
+          case 'Partial Poll':
+            gdn.informMessage(Data.html);
+            break;
+        }
+        
       }
     });
-
-    // Bring results to front
-//    $('.DP_AnswerForm').fadeOut('slow', function() {
-//      $('.DP_ResultsForm').fadeIn('slow');
-//    });
-//
-//    // Change tool mode
-//    $(this).html('Show Poll Form');
   });
 
   // hijack the delete click

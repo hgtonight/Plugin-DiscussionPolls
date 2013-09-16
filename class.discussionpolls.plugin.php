@@ -97,42 +97,45 @@ class DiscussionPolls extends Gdn_Plugin {
       // You have to have voting privilege only
       if(!$Session->CheckPermission('Plugins.DiscussionPolls.Vote', FALSE) || !$Session->UserID) {
         Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnableToSubmit', 'You do not have permission to submit a poll.'));
-        Redirect('discussions/' . $FormPostValues['DiscussionID']);
+        Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
 
       $DPModel = new DiscussionPollsModel();
 
       if(!$DPModel->CheckFullyAnswered($FormPostValues)) {
         //save partial answers
-        $DPModel->SavePartialAnswer($FormPostValues, $Session->UserID);
-        Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
-        //Redirect('discussion/' . $FormPostValues['DiscussionID']);
+        $Partial = $DPModel->SavePartialAnswer($FormPostValues, $Session->UserID);
       }
-      $Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
+      else {
+        $Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
+      }
       
       // Return the proper view
       if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
-        // Used for AJAX poll submission
+        // Used for AJAX poll submission returns the results
+        $Poll = $DPModel->GetByDiscussionID($FormPostValues['DiscussionID']);
         if($Saved) {
-          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+          $Results = $this->_RenderResults($Poll, FALSE);
+          $Type = 'Full Poll';
         }
         else {
-          Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+          $Results = T('Plugins.DiscussionPolls.SavedPartial', 'We have saved your completed poll questions.');
+          $Type = 'Partial Poll';
         }
-        
-        
-        $Data = array('html' => $PollResults);
+        $Data = array('html' => $Results, 'type' => $Type);
         echo json_encode($Data);
       }
       else {
         if($Saved) {
-          Redirect('discussion/' . $FormPostValues['DiscussionID']);
+          // Don't stash any message
+        }
+        else if ($Partial) {
+          Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
         }
         else {
           Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredUnable', 'Unable to save!'));
-          Redirect('discussion/' . $FormPostValues['DiscussionID']);
         }
+        Redirect('discussion/' . $FormPostValues['DiscussionID']);
       }
     }
   }
@@ -483,7 +486,8 @@ class DiscussionPolls extends Gdn_Plugin {
         $PartialAnswers = $DPModel->PartialAnswer($Poll->PollID, $Session->UserID);
         //if some saved partial answers inform
         if(!empty($PartialAnswers)) {
-          Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.SavedPartial', 'We have saved your completed questions.'));
+          // TODO: Remove?
+          Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.LoadedPartial', 'Your answered questions have been loaded.'));
         }
         // Render the submission form
         $this->_RenderVotingForm($Sender, $Poll, $PartialAnswers);
