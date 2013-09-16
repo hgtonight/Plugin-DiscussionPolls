@@ -25,7 +25,7 @@ echo Wrap(
                         T('Allow users to view results without voting'), 'div', array('class' => 'Info'), 'li') .
                 $this->Form->Label(T('Poll Title'), 'Plugins.DiscussionPolls.DisablePollTitle') .
                 Wrap($this->Form->CheckBox('Plugins.DiscussionPolls.DisablePollTitle') .
-                        T('Allow polls without a title (title will be hidden)'), 'div', array('class' => 'Info')), 'li'), 'ul');
+                        T('Disable poll titles'), 'div', array('class' => 'Info')), 'li'), 'ul');
 
 echo $this->Form->Close("Save");
 ?>
