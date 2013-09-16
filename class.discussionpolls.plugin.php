@@ -303,21 +303,36 @@ class DiscussionPolls extends Gdn_Plugin {
       $Error = 'You must enter a valid poll title!';
     }
 
-    foreach($FormPostValues['DP_Questions'] as $Index => $Question) {
-      if(trim($Question) == FALSE) {
-        $Invalid = TRUE;
-        $Error = 'You must enter valid question text!';
-        break;
-      }
-      foreach($FormPostValues['DP_Options' . $Index] as $Option) {
-        if(trim($Option) == FALSE) {
-          $Invalid = TRUE;
-          $Error = 'You must enter valid option text!';
+    // validate each question
+    if(!$Invalid) {
+      foreach($FormPostValues['DP_Questions'] as $QIndex => $Question) {
+        if(trim($Question) == FALSE) {
+          // check to see if all the options are also blank
+          foreach($FormPostValues['DP_Options' . $QIndex] as $Option) {
+            if(trim($Option) != FALSE) {
+              $Invalid = TRUE;
+              $Error = 'You must enter valid text for question #'.($QIndex + 1);
+            }
+          }
+          if($Invalid === FALSE) {
+            // remove the question
+            unset($Sender->EventArguments['FormPostValues']['DP_Questions'][$QIndex]);
+            // unsetting the options will prevent any more questions from being added
+            unset($Sender->EventArguments['FormPostValues']['DP_Options'.$QIndex]);
+          }
           break;
+        }
+        else {
+          foreach($FormPostValues['DP_Options' . $QIndex] as $OIndex => $Option) {
+            if(trim($Option) == FALSE) {
+              $Invalid = TRUE;
+              $Error = 'You must enter valid text for option #'.($OIndex + 1).' in question #'.($OIndex + 1);
+              break;
+            }
+          }
         }
       }
     }
-
     if($Invalid) {
       $Error = Wrap('Error', 'h1') . Wrap($Error, 'p');
       // should prevent the discussion from being saved
@@ -421,7 +436,7 @@ class DiscussionPolls extends Gdn_Plugin {
 
     // Delete via model
     $DPModel = new DiscussionPollsModel();
-    $DPModel->Delete($DiscussionID);
+    $DPModel->DeleteByDiscussionID($DiscussionID);
   }
 
   /**

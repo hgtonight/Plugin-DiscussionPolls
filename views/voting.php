@@ -2,8 +2,14 @@
 function DiscussionPollAnswerForm($PollForm,$Poll,$PartialAnswers){
 ?>
 <div class="DP_AnswerForm">
-    <?php 
-    echo $Poll->Title;
+    <?php
+    if(GetValue('Title', $Poll)
+            || C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
+      echo $Poll->Title;
+      if(trim($Poll->Title) != FALSE) {
+        echo '<hr />';
+      }
+    }
     echo $PollForm->Open(array('action' => Url('/discussion/poll/submit/'), 'method' => 'post'));
     echo $PollForm->Errors();
 

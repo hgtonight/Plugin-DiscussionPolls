@@ -215,7 +215,6 @@ class DiscussionPollsModel extends Gdn_Model {
       // Insert the Options
       foreach($QuestionIDs as $Index => $QuestionID) {
         $QuestionOptions = ArrayValue('DP_Options' . $Index, $FormPostValues);
-        //echo '<pre>'; var_dump($QuestionOptions); echo '</pre>';
         foreach($QuestionOptions as $Option) {
           $this->SQL
                   ->Insert('DiscussionPollQuestionOptions', array(
