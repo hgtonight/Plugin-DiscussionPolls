@@ -3,9 +3,10 @@ function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed)
 ?>
   <div class="P" id="DP_Form">
   <?php
-  echo $PollForm->Label('Discussion Poll Title', 'DP_Title');
-  echo Wrap($PollForm->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
-
+  if(!C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
+    echo $PollForm->Label('Discussion Poll Title', 'DP_Title');
+    echo Wrap($PollForm->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
+  }
   echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DP_PreviousQuestion'));
 
   $QuestionCount = 0;
