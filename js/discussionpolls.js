@@ -18,35 +18,46 @@ jQuery(document).ready(function($) {
     event.preventDefault();
 
     if($(this).html() === 'Show Results') {
+      var btn = this;
       // Load from ajax if they don't exist
       if($('.DP_ResultsForm').length === 0) {
         // Load Results from ajax
-        var btn = this;
         $.ajax({
           url: $(btn).attr('href'),
           global: false,
           type: 'GET',
           data: 'DeliveryType=VIEW',
           dataType: 'json',
+          beforeSend: function() {
+            // add a spinner
+            $(btn).after('<span class="DP_Spinner TinyProgress">&nbsp;</span>');
+          },
           success: function(Data) {
             $('.DP_AnswerForm').after(Data.html);
             $('.DP_ResultsForm').hide();
 
             // Repeated here to account for slow hosts
             $('.DP_AnswerForm').fadeOut('slow', function() {
-              $('.DP_ResultsForm').fadeIn('slow');
+              $('.DP_ResultsForm').fadeIn('slow', function() {
+                // Change tool mode
+                $(btn).html('Show Poll Form');
+              });
             });
+          },
+          complete: function() {
+            $('.DP_Spinner').remove();
           }
         });
       }
       else {
         // Bring results to front
         $('.DP_AnswerForm').fadeOut('slow', function() {
-          $('.DP_ResultsForm').fadeIn('slow');
+          $('.DP_ResultsForm').fadeIn('slow', function() {
+            // Change tool mode
+            $(btn).html('Show Poll Form');
+          });
         });
       }
-      // Change tool mode
-      $(this).html('Show Poll Form');
     }
     else {
       // Bring poll form to front
@@ -69,6 +80,10 @@ jQuery(document).ready(function($) {
       type: $(this).attr('method'),
       data: $(this).serialize()+'&DeliveryType=VIEW',
       dataType: 'json',
+      beforeSend: function() {
+        // add a spinner
+        $('.DP_AnswerForm .Buttons').append('<span class="DP_Spinner TinyProgress">&nbsp;</span>');
+      },
       success: function(Data) {
         switch(Data.type) {
           case 'Full Poll':
@@ -95,7 +110,9 @@ jQuery(document).ready(function($) {
             gdn.informMessage(Data.html);
             break;
         }
-        
+      },
+      complete: function() {
+        $('.DP_Spinner').remove();
       }
     });
   });

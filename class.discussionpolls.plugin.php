@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.2',
+    'Version' => '1.2.1',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -326,12 +326,20 @@ class DiscussionPolls extends Gdn_Plugin {
           break;
         }
         else {
+          $OptionCount = 0;
           foreach($FormPostValues['DP_Options' . $QIndex] as $OIndex => $Option) {
             if(trim($Option) == FALSE) {
-              $Invalid = TRUE;
-              $Error = 'You must enter valid text for option #'.($OIndex + 1).' in question #'.($OIndex + 1);
-              break;
+              // unset that option
+              unset($Sender->EventArguments['FormPostValues']['DP_Options'.$QIndex][$OIndex]);
             }
+            else {
+              $OptionCount++;
+            }
+          }
+          if($OptionCount < 2) {
+            $Invalid = TRUE;
+              $Error = 'You must enter at least two valid options for question #'.($QIndex + 1);
+              break;
           }
         }
       }
