@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.2.1',
+    'Version' => '1.2.2',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -220,6 +220,12 @@ class DiscussionPolls extends Gdn_Plugin {
    * @param VanillaController $Sender PostController
    */
   public function PostController_Render_Before($Sender) {
+    $Session = Gdn::Session();
+    // Make sure we can add/manage polls
+    if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
+      // don't render poll form at all
+      return;
+    }
     // Add poll creation resources
     $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
@@ -252,8 +258,12 @@ class DiscussionPolls extends Gdn_Plugin {
    * @param VanillaController $Sender PostController
    */
   public function PostController_DiscussionFormOptions_Handler($Sender) {
-    // Make sure we can add polls
-    $Sender->Permission('Plugins.DiscussionPolls.Add', '', FALSE);
+    $Session = Gdn::Session();
+    // Make sure we can add/manage polls
+    if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
+      // don't render poll form at all
+      return;
+    }
 
     // render check box
     $Sender->EventArguments['Options'] .= '<li>' . $Sender->Form->CheckBox('DP_Attach', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)) . '</li>';
