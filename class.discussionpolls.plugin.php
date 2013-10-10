@@ -375,7 +375,7 @@ class DiscussionPolls extends Gdn_Plugin {
     // Make sure we can add/manage polls
     if(!$Session->CheckPermission(array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.Manage'), FALSE)) {
       // this should only be shown to users that are mucking with the system
-      Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
+      // Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.UnableToEdit', 'You do not have permission to edit a poll.'));
       return FALSE;
     }
 
