@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.2.2',
+    'Version' => '1.2.3',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -52,7 +52,7 @@ class DiscussionPolls extends Gdn_Plugin {
     }
     else {
       if($Sender->Form->Save() !== FALSE) {
-        $Sender->InformMessage('<span class="InformSprite Sliders"></span>' . T("Your changes have been saved."), 'HasSprite');
+        $Sender->InformMessage('<span class="InformSprite Sliders"></span>' . T('Your changes have been saved.'), 'HasSprite');
       }
     }
 
@@ -305,6 +305,14 @@ class DiscussionPolls extends Gdn_Plugin {
     $FormPostValues = GetValue('FormPostValues', $Sender->EventArguments, array());
     if(!GetValue('DP_Attach', $FormPostValues)) {
       // No need to validate
+      return FALSE;
+    }
+    
+    // Only validate new polls
+    // TODO: Remove this when poll editing becomes a thing
+    $DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
+    $DPModel = new DiscussionPollsModel();
+    if($DPModel->Exists($DiscussionID)) {
       return FALSE;
     }
 
