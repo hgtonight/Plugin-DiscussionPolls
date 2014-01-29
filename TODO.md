@@ -1,4 +1,5 @@
 ## TODO
+1. Polls will be saved when drafts are saved
 1. Polls will be able to be closed independently of discussion
 1. Poll will automatically expire after 7 days
     1. Expiration will be a configurable setting
