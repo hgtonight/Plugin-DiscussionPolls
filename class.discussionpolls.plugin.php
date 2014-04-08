@@ -269,7 +269,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->EventArguments['Options'] .= '<li>' . $Sender->Form->CheckBox('DP_Attach', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)) . '</li>';
 
     // Load up existing poll data
-    if($Sender->Discussion->DiscussionID != NULL) {
+    if(GetValueR('Discussion.DiscussionID',$Sender)) {
       $DPModel = new DiscussionPollsModel();
       $DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
     }
