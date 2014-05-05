@@ -166,9 +166,15 @@ class DiscussionPollsModel extends Gdn_Model {
 
 
       $Data = $this->SQL->Get()->FirstRow();
-      //store in cache
-      self::$Cache['Exists'][$DiscussionID] = $Data;
-      $PollID = $Data->PollID;
+      
+      if(!empty($Data)) {
+        //store in cache
+        self::$Cache['Exists'][$DiscussionID] = $Data;
+        $PollID = $Data->PollID;
+      }
+      else {
+        $PollID = NULL;
+      }
     }
 
     return $this->Get($PollID);

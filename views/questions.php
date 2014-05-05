@@ -31,14 +31,14 @@ function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed)
     $j = 0;
     foreach($Question->Options as $Option) {
       echo $PollForm->Label(
-              'Option #' . ($j + 1), 'DP_Options' . $QuestionCount . '.' . $i
+              'Option #' . ($j + 1), 'DP_Options' . $QuestionCount . '.' . $j
       );
 
       echo Wrap(
               $PollForm->TextBox(
                       'DP_Options' . $QuestionCount . '[]', array_merge($Disabled, array(
                   'value' => $Option->Title,
-                  'id' => 'DP_Options' . $QuestionCount . '.' . $i,
+                  'id' => 'DP_Options' . $QuestionCount . '.' . $j,
                   'maxlength' => 100,
                   'class' => 'InputBox BigInput'
               ))), 'div', array('class' => 'TextBoxWrapper')

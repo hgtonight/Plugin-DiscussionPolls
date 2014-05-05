@@ -16,7 +16,7 @@
 $PluginInfo['DiscussionPolls'] = array(
     'Name' => 'Discussion Polls',
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
-    'Version' => '1.2.4',
+    'Version' => '1.3',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
@@ -270,9 +270,13 @@ class DiscussionPolls extends Gdn_Plugin {
 
     // Load up existing poll data
     if(GetValueR('Discussion.DiscussionID',$Sender)) {
-      $DPModel = new DiscussionPollsModel();
-      $DiscussionPoll = $DPModel->GetByDiscussionID($Sender->Discussion->DiscussionID);
+      $DID = $Sender->Discussion->DiscussionID;
     }
+    else {
+      $DID = NULL;
+    }
+    $DPModel = new DiscussionPollsModel();
+    $DiscussionPoll = $DPModel->GetByDiscussionID($DID);
 
     // If there is existing poll data, disable editing
     // Editing will be in a future release
