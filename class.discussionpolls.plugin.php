@@ -208,7 +208,7 @@ class DiscussionPolls extends Gdn_Plugin {
     
     $Sender->AddDefinition('DP_ShowResults', T('Show Results'));
     $Sender->AddDefinition('DP_ShowForm', T('Show Poll Form'));
-    $Sender->AddDefinition('DP_DeleteConfirm', T('Are you sure you want to delete this poll?'));
+    $Sender->AddDefinition('DP_ConfirmDelete', T('Are you sure you want to delete this poll?'));
     
     //check for any stashed messages from poll submit
     $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
