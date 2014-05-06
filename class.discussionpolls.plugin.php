@@ -205,6 +205,11 @@ class DiscussionPolls extends Gdn_Plugin {
     // Add poll voting resources
     $Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
+    
+    $Sender->AddDefinition('DP_ShowResults', T('Show Results'));
+    $Sender->AddDefinition('DP_ShowForm', T('Show Poll Form'));
+    $Sender->AddDefinition('DP_DeleteConfirm', T('Are you sure you want to delete this poll?'));
+    
     //check for any stashed messages from poll submit
     $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
     if($Message) {
@@ -483,7 +488,6 @@ class DiscussionPolls extends Gdn_Plugin {
    * @return type
    */
   protected function _PollInsertion($Sender) {
-    //echo '<pre>'; var_dump($Sender->Discussion); echo '</pre>';
     $Discussion = $Sender->Discussion;
     $Session = Gdn::Session();
     $DPModel = new DiscussionPollsModel();
@@ -543,16 +547,14 @@ class DiscussionPolls extends Gdn_Plugin {
         );
       }
 
-      if($Tools != '') {
-        echo Wrap($Tools, 'ul', array('id' => 'DP_Tools'));
-      }
+      echo WrapIf($Tools, 'ul', array('id' => 'DP_Tools'));
     }
     else {
       // Poll does not exist
       if($Discussion->InsertUserID == $Session->UserID || $Session->CheckPermission('Plugins.DiscussionPolls.Manage')) {
         echo Wrap(
                 Wrap(
-                        Anchor('Attach Poll', '/vanilla/post/editdiscussion/' . $Discussion->DiscussionID), 'li'), 'ul', array('id' => 'DP_Tools')
+                        Anchor(T('Attach Poll'), '/vanilla/post/editdiscussion/' . $Discussion->DiscussionID), 'li'), 'ul', array('id' => 'DP_Tools')
         );
       }
     }

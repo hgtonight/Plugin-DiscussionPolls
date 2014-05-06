@@ -17,7 +17,7 @@ jQuery(document).ready(function($) {
   var QuestionString = gdn.definition('DP_EmptyQuestion'); // This is an empty form question; it is used to sidestep differences between 2.0 and 2.1 form functions
   var ExistingPoll = false; // Is this a pre-existing poll page? Assume it is a new page
   
-  // Get strings from definition and translated render
+  // Get strings from definitions and translated render
   var NextQString = gdn.definition('DP_NextQuestion');
   var PrevQString = gdn.definition('DP_PrevQuestion');
   var AddQString = $('#DP_NextQuestion').text();

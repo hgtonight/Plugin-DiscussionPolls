@@ -13,11 +13,16 @@
  * 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 jQuery(document).ready(function($) {
+  // Get strings from definitions
+  var ResultString = gdn.definition('DP_ShowResults');
+  var FormString = gdn.definition('DP_ShowForm');
+  var ConfirmString = gdn.definition('DP_ConfirmDelete');
+  
   // hijack the results click
   $('#DP_Results a').click(function(event) {
     event.preventDefault();
 
-    if($(this).html() === 'Show Results') {
+    if($(this).html() === ResultString) {
       var btn = this;
       // Load from ajax if they don't exist
       if($('.DP_ResultsForm').length === 0) {
@@ -40,7 +45,7 @@ jQuery(document).ready(function($) {
             $('.DP_AnswerForm').fadeOut('slow', function() {
               $('.DP_ResultsForm').fadeIn('slow', function() {
                 // Change tool mode
-                $(btn).html('Show Poll Form');
+                $(btn).html(FormString);
               });
             });
           },
@@ -54,7 +59,7 @@ jQuery(document).ready(function($) {
         $('.DP_AnswerForm').fadeOut('slow', function() {
           $('.DP_ResultsForm').fadeIn('slow', function() {
             // Change tool mode
-            $(btn).html('Show Poll Form');
+            $(btn).html(FormString);
           });
         });
       }
@@ -66,7 +71,7 @@ jQuery(document).ready(function($) {
       });
 
       // Change tool mode
-      $(this).html('Show Results');
+      $(this).html(ResultString);
     }
   });
 
@@ -134,5 +139,5 @@ jQuery(document).ready(function($) {
       });
     }
   },
-  'Are you sure you want to delete this poll?');
+  ConfirmString);
 });
