@@ -1,5 +1,5 @@
 <?php if(!defined('APPLICATION')) exit();
-/* 	Copyright 2013 Zachary Doll
+/* 	Copyright 2013-2014 Zachary Doll
  * 	This program is free software: you can redistribute it and/or modify
  * 	it under the terms of the GNU General Public License as published by
  * 	the Free Software Foundation, either version 3 of the License, or
@@ -109,7 +109,7 @@ class DiscussionPolls extends Gdn_Plugin {
       else {
         $Saved = $DPModel->SaveAnswer($FormPostValues, $Session->UserID);
       }
-      
+
       // Return the proper view
       if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
         // Used for AJAX poll submission returns the results
@@ -129,7 +129,7 @@ class DiscussionPolls extends Gdn_Plugin {
         if($Saved) {
           // Don't stash any message
         }
-        else if ($Partial) {
+        else if($Partial) {
           Gdn::Session()->Stash('DiscussionPollsMessage', T('Plugins.DiscussionPolls.UnsweredAllQuestions', 'You have not answered all questions!'));
         }
         else {
@@ -205,11 +205,11 @@ class DiscussionPolls extends Gdn_Plugin {
     // Add poll voting resources
     $Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
     $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
-    
+
     $Sender->AddDefinition('DP_ShowResults', T('Show Results'));
     $Sender->AddDefinition('DP_ShowForm', T('Show Poll Form'));
     $Sender->AddDefinition('DP_ConfirmDelete', T('Are you sure you want to delete this poll?'));
-    
+
     //check for any stashed messages from poll submit
     $Message = Gdn::Session()->Stash('DiscussionPollsMessage');
     if($Message) {
@@ -237,14 +237,14 @@ class DiscussionPolls extends Gdn_Plugin {
     //get question template for jquery poll expansion
     $DefaultQuestionString = $this->_RenderQuestionFields($Sender->Form, FALSE);
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
-    
+
     // Translated definitions
     $Sender->AddDefinition('DP_NextQuestion', T('Next Question'));
     $Sender->AddDefinition('DP_PrevQuestion', T('Previous Question'));
   }
 
   /**
-   * Insert poll in first post of discussion in 2.0.x 
+   * Insert poll in first post of discussion in 2.0.x
    * @param VanillaController $Sender DiscussionController
    */
   public function DiscussionController_AfterCommentBody_Handler($Sender) {
@@ -255,7 +255,7 @@ class DiscussionPolls extends Gdn_Plugin {
   }
 
   /**
-   * Insert poll in first post of discussion in 2.1b1 
+   * Insert poll in first post of discussion in 2.1b1
    * @param VanillaController $Sender DiscussionController
    */
   public function DiscussionController_AfterDiscussionBody_Handler($Sender) {
@@ -278,7 +278,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->EventArguments['Options'] .= '<li>' . $Sender->Form->CheckBox('DP_Attach', T('Attach Poll'), array('value' => '1', 'checked' => TRUE)) . '</li>';
 
     // Load up existing poll data
-    if(GetValueR('Discussion.DiscussionID',$Sender)) {
+    if(GetValueR('Discussion.DiscussionID', $Sender)) {
       $DID = $Sender->Discussion->DiscussionID;
     }
     else {
@@ -320,7 +320,7 @@ class DiscussionPolls extends Gdn_Plugin {
       // No need to validate
       return FALSE;
     }
-    
+
     // Only validate new polls
     // TODO: Remove this when poll editing becomes a thing
     $DiscussionID = GetValue('DiscussionID', $Sender->EventArguments, 0);
@@ -345,14 +345,14 @@ class DiscussionPolls extends Gdn_Plugin {
           foreach($FormPostValues['DP_Options' . $QIndex] as $Option) {
             if(trim($Option) != FALSE) {
               $Invalid = TRUE;
-              $Error = 'You must enter valid text for question #'.($QIndex + 1);
+              $Error = 'You must enter valid text for question #' . ($QIndex + 1);
             }
           }
           if($Invalid === FALSE) {
             // remove the question
             unset($Sender->EventArguments['FormPostValues']['DP_Questions'][$QIndex]);
             // unsetting the options will prevent any more questions from being added
-            unset($Sender->EventArguments['FormPostValues']['DP_Options'.$QIndex]);
+            unset($Sender->EventArguments['FormPostValues']['DP_Options' . $QIndex]);
           }
           break;
         }
@@ -361,7 +361,7 @@ class DiscussionPolls extends Gdn_Plugin {
           foreach($FormPostValues['DP_Options' . $QIndex] as $OIndex => $Option) {
             if(trim($Option) == FALSE) {
               // unset that option
-              unset($Sender->EventArguments['FormPostValues']['DP_Options'.$QIndex][$OIndex]);
+              unset($Sender->EventArguments['FormPostValues']['DP_Options' . $QIndex][$OIndex]);
             }
             else {
               $OptionCount++;
@@ -369,8 +369,8 @@ class DiscussionPolls extends Gdn_Plugin {
           }
           if($OptionCount < 2) {
             $Invalid = TRUE;
-              $Error = 'You must enter at least two valid options for question #'.($QIndex + 1);
-              break;
+            $Error = 'You must enter at least two valid options for question #' . ($QIndex + 1);
+            break;
           }
         }
       }
@@ -570,12 +570,12 @@ class DiscussionPolls extends Gdn_Plugin {
     include($this->ThemeView('results'));
 
     if($Echo) {
-      DiscussionPollResults($Poll);
+      DPRenderResults($Poll);
       return TRUE;
     }
     else {
       ob_start();
-      DiscussionPollResults($Poll);
+      DPRenderResults($Poll);
       $Result = ob_get_contents();
       ob_end_clean();
       return $Result;
@@ -584,7 +584,7 @@ class DiscussionPolls extends Gdn_Plugin {
 
   /**
    * Renders / fetches question fields for form
-   * @param stdClass $Poll the poll object we are rendering
+   * @param stdClass $PollForm the poll object we are rendering
    * @param boolean $Echo echo or return result string
    * @return mixed Will return string if $Echo is false, will return true otherwise
    */
@@ -616,8 +616,9 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->PollForm->AddHidden('DiscussionID', $Poll->DiscussionID);
     $Sender->PollForm->AddHidden('PollID', $Poll->PollID);
 
-    if($Sender->Data('DiscussionPollsMessage'))
+    if($Sender->Data('DiscussionPollsMessage')) {
       $Sender->PollForm->AddError($Sender->Data('DiscussionPollsMessage'));
+    }
 
     include_once($this->ThemeView('voting'));
     if($Echo) {
