@@ -38,25 +38,18 @@ function DiscussionPollResults($Poll) {
             <ol class="DP_ResultOptions">
               <?php
               foreach($Question->Options as $Option) {
-                echo Wrap($Option->Title, 'div');
+                $String = Wrap($Option->Title, 'div');
                 $Percentage = number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
                 if($Percentage < 10) {
-                  $Percentage = $Percentage . '%';
                   // put the text on the outside
-                  ?>
-                  <span class="DP_Bar DP_Bar-<?php echo $k ?>" style="width: <?php echo $Percentage ?>">&nbsp</span>
-                  <?php
-                  echo $Percentage;
+                  $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">&nbsp</span> ' . $Percentage . '%';
                 }
                 else {
-                  $Percentage = $Percentage . '%';
                   // put the text on the inside
-                  ?>
-                  <span class="DP_Bar DP_Bar-<?php echo $k ?>" style="width: <?php echo $Percentage ?>"><?php echo $Percentage ?></span>
-                  <?php
+                  $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">' . $Percentage . '%</span>';
                 }
 
-                echo Wrap($string, 'li', array('class' => 'DP_ResultOption'));
+                echo Wrap($String, 'li', array('class' => 'DP_ResultOption'));
 
                 $k++;
                 $k = $k % 10;
