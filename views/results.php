@@ -39,7 +39,7 @@ function DiscussionPollResults($Poll) {
               <?php
               foreach($Question->Options as $Option) {
                 $String = Wrap($Option->Title, 'div');
-                $Percentage = number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
+                $Percentage = ($Question->CountResponses == 0) ? '0.00' : number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
                 if($Percentage < 10) {
                   // put the text on the outside
                   $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">&nbsp</span> ' . $Percentage . '%';
