@@ -1,5 +1,5 @@
 <?php if(!defined('APPLICATION')) exit();
-/* 	Copyright 2013 Zachary Doll
+/* 	Copyright 2013-2014 Zachary Doll
  * 	This program is free software: you can redistribute it and/or modify
  * 	it under the terms of the GNU General Public License as published by
  * 	the Free Software Foundation, either version 3 of the License, or
@@ -32,12 +32,12 @@ class DiscussionPollsModel extends Gdn_Model {
    * @return boolean
    */
   public function Exists($DiscussionID) {
-
     //check for cached result
     $Data = GetValueR('Exists.' . $DiscussionID, self::$Cache);
 
-    if(!empty($Data))
+    if(!empty($Data)) {
       return TRUE;
+    }
 
     $this->SQL
             ->Select('PollID')
@@ -59,8 +59,9 @@ class DiscussionPollsModel extends Gdn_Model {
     //check for cached result
     $Data = GetValueR('Responses.' . $DiscussionID, self::$Cache);
 
-    if(!empty($Data))
+    if(!empty($Data)) {
       return $Data;
+    }
 
     $this->SQL
             ->Select('p.PollID')
@@ -83,8 +84,9 @@ class DiscussionPollsModel extends Gdn_Model {
     //check for cached result
     $Data = GetValueR('Get.' . $PollID, self::$Cache);
 
-    if(!empty($Data))
+    if(!empty($Data)) {
       return $Data;
+    }
 
     $this->SQL
             ->Select('p.*')
@@ -163,10 +165,8 @@ class DiscussionPollsModel extends Gdn_Model {
               ->From('DiscussionPolls p')
               ->Where('p.DiscussionID', $DiscussionID);
 
-
-
       $Data = $this->SQL->Get()->FirstRow();
-      
+
       if(!empty($Data)) {
         //store in cache
         self::$Cache['Exists'][$DiscussionID] = $Data;
@@ -176,7 +176,6 @@ class DiscussionPollsModel extends Gdn_Model {
         $PollID = NULL;
       }
     }
-
     return $this->Get($PollID);
   }
 
@@ -249,8 +248,9 @@ class DiscussionPollsModel extends Gdn_Model {
     //check for cached result
     $Data = GetValueR('Answered.' . $PollID . '_' . $UserID, self::$Cache);
 
-    if(!empty($Data))
+    if(!empty($Data)) {
       return TRUE;
+    }
 
     $this->SQL
             ->Select('q.PollID, a.UserID')
@@ -275,8 +275,9 @@ class DiscussionPollsModel extends Gdn_Model {
     //check for cached result
     $Data = GetValueR('Partial.' . $PollID . '_' . $UserID, self::$Cache);
 
-    if(!empty($Data))
+    if(!empty($Data)) {
       return $Data;
+    }
 
     $this->SQL
             ->Select('pa.*')
@@ -286,12 +287,14 @@ class DiscussionPollsModel extends Gdn_Model {
     $Answered = array();
     $Answers = $this->SQL->Get()->Result();
 
-    if(empty($Answers))
+    if(empty($Answers)) {
       return $Answered;
-
+    }
+    
     //create simple lookup
-    foreach($Answers As $Answer)
+    foreach($Answers As $Answer) {
       $Answered[$Answer->QuestionID] = $Answer->OptionID;
+    }
     //store in cache
     self::$Cache['Partial'][$PollID . '_' . $UserID] = $Answered;
     return $Answered;
@@ -316,28 +319,7 @@ class DiscussionPollsModel extends Gdn_Model {
     else {
       try {
         $this->Database->BeginTransaction();
-        foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
-          $MemberKey = 'DP_Answer' . $Index;
-          $this->SQL
-                  ->Insert('DiscussionPollAnswers', array(
-                      'PollID' => $FormPostValues['PollID'],
-                      'QuestionID' => $QuestionID,
-                      'UserID' => $UserID,
-                      'OptionID' => $FormPostValues[$MemberKey])
-          );
-
-          $this->SQL
-                  ->Update('DiscussionPollQuestions')
-                  ->Set('CountResponses', 'CountResponses + 1', FALSE)
-                  ->Where('QuestionID', $QuestionID)
-                  ->Put();
-
-          $this->SQL
-                  ->Update('DiscussionPollQuestionOptions')
-                  ->Set('CountVotes', 'CountVotes + 1', FALSE)
-                  ->Where('OptionID', $FormPostValues[$MemberKey])
-                  ->Put();
-        }
+        $this->_InsertAnswerData($FormPostValues, $UserID);
         $this->Database->CommitTransaction();
       }
       catch(Exception $Ex) {
@@ -348,6 +330,31 @@ class DiscussionPollsModel extends Gdn_Model {
     }
 
     return FALSE;
+  }
+  
+  protected function _InsertAnswerData($FormPostValues, $UserID) {
+    foreach($FormPostValues['DP_AnswerQuestions'] as $Index => $QuestionID) {
+      $MemberKey = 'DP_Answer' . $Index;
+      $this->SQL
+              ->Insert('DiscussionPollAnswers', array(
+                  'PollID' => $FormPostValues['PollID'],
+                  'QuestionID' => $QuestionID,
+                  'UserID' => $UserID,
+                  'OptionID' => $FormPostValues[$MemberKey])
+      );
+
+      $this->SQL
+              ->Update('DiscussionPollQuestions')
+              ->Set('CountResponses', 'CountResponses + 1', FALSE)
+              ->Where('QuestionID', $QuestionID)
+              ->Put();
+
+      $this->SQL
+              ->Update('DiscussionPollQuestionOptions')
+              ->Set('CountVotes', 'CountVotes + 1', FALSE)
+              ->Where('OptionID', $FormPostValues[$MemberKey])
+              ->Put();
+    }
   }
 
   /**
@@ -380,8 +387,8 @@ class DiscussionPollsModel extends Gdn_Model {
       $this->Database->CommitTransaction();
     }
     catch(Exception $Ex) {
-
       $this->Database->RollbackTransaction();
+      error_log($Ex->getMessage());
     }
 
     return $Return;
@@ -391,7 +398,7 @@ class DiscussionPollsModel extends Gdn_Model {
    * Remove Partial Answers from the database
    * @param int $PollID
    * @param int $UserID
-   * @return boolean 
+   * @return boolean
    */
   public function PurgePartialAnswers($PollID, $UserID) {
     //purge cache
@@ -403,7 +410,7 @@ class DiscussionPollsModel extends Gdn_Model {
   /**
    * Make sure there are enough answered question for the poll submission
    * @param array $FormPostValues
-   * @return boolean 
+   * @return boolean
    */
   public function CheckFullyAnswered($FormPostValues) {
     $Answered = array();
@@ -439,7 +446,7 @@ class DiscussionPollsModel extends Gdn_Model {
       throw $Ex;
     }
   }
-  
+
   /**
    * A convenience method that removes all poll data associated with the
    * discussion id
