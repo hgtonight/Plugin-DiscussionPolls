@@ -1,4 +1,4 @@
-/* 	Copyright 2013 Zachary Doll
+/* 	Copyright 2013-2014 Zachary Doll
  * 	This program is free software: you can redistribute it and/or modify
  * 	it under the terms of the GNU General Public License as published by
  * 	the Free Software Foundation, either version 3 of the License, or
@@ -17,15 +17,15 @@ jQuery(document).ready(function($) {
   var ResultString = gdn.definition('DP_ShowResults');
   var FormString = gdn.definition('DP_ShowForm');
   var ConfirmString = gdn.definition('DP_ConfirmDelete');
-  
+
   // hijack the results click
   $('#DP_Results a').click(function(event) {
     event.preventDefault();
 
-    if($(this).html() === ResultString) {
+    if ($(this).html() === ResultString) {
       var btn = this;
       // Load from ajax if they don't exist
-      if($('.DP_ResultsForm').length === 0) {
+      if ($('.DP_ResultsForm').length === 0) {
         // Load Results from ajax
         $.ajax({
           url: $(btn).attr('href'),
@@ -83,17 +83,17 @@ jQuery(document).ready(function($) {
       url: $(this).attr('action'),
       global: false,
       type: $(this).attr('method'),
-      data: $(this).serialize()+'&DeliveryType=VIEW',
+      data: $(this).serialize() + '&DeliveryType=VIEW',
       dataType: 'json',
       beforeSend: function() {
         // add a spinner
         $('.DP_AnswerForm .Buttons').append('<span class="DP_Spinner TinyProgress">&nbsp;</span>');
       },
       success: function(Data) {
-        switch(Data.type) {
+        switch (Data.type) {
           case 'Full Poll':
             // Remove the old results form
-            if($('.DP_ResultsForm').length !== 0) {
+            if ($('.DP_ResultsForm').length !== 0) {
               $('.DP_ResultsForm').remove();
             }
             // Insert the new results

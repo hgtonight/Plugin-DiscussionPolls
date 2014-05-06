@@ -1,18 +1,5 @@
 <?php if(!defined("APPLICATION")) exit();
-/* 	Copyright 2013 Zachary Doll
- * 	This program is free software: you can redistribute it and/or modify
- * 	it under the terms of the GNU General Public License as published by
- * 	the Free Software Foundation, either version 3 of the License, or
- * 	(at your option) any later version.
- *
- * 	This program is distributed in the hope that it will be useful,
- * 	but WITHOUT ANY WARRANTY; without even the implied warranty of
- * 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * 	GNU General Public License for more details.
- *
- * 	You should have received a copy of the GNU General Public License
- * 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/* Copyright 2013 Zachary Doll */
 echo Wrap(T($this->Data['Title']), 'h1');
 
 echo $this->Form->Open();
@@ -30,9 +17,9 @@ echo Wrap(
 echo $this->Form->Close("Save");
 ?>
 <div class="Footer">
-  <?php
-  echo Wrap(T('Feedback'), 'h3');
-  ?>
+<?php
+echo Wrap(T('Feedback'), 'h3');
+?>
   <div class="Aside Box">
     <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
       <input type="hidden" name="cmd" value="_s-xclick">
@@ -42,8 +29,8 @@ echo $this->Form->Close("Save");
     </form>
 
   </div>
-  <?php
-  echo Wrap('Find this plugin helpful? Want to support a freelance developer?<br/>Click the donate button to buy me a beer. :D', 'div', array('class' => 'Info'));
-  echo Wrap('Confused by something? Check out the feedback thread on the official <a href="http://vanillaforums.org/discussion/24670/feedback-for-discussion-polls" target="_blank">Vanilla forums</a>.', 'div', array('class' => 'Info'));
-  ?>
+<?php
+echo Wrap('Find this plugin helpful? Want to support a freelance developer?<br/>Click the donate button to buy me a beer. :D', 'div', array('class' => 'Info'));
+echo Wrap('Confused by something? Check out the feedback thread on the official <a href="http://vanillaforums.org/discussion/24670/feedback-for-discussion-polls" target="_blank">Vanilla forums</a>.', 'div', array('class' => 'Info'));
+?>
 </div>

@@ -1,67 +1,58 @@
 <?php if(!defined('APPLICATION')) exit();
-
-function DiscussionPollResults($Poll) {
-  ?>
-  <div class="DP_ResultsForm">
-    <?php
-    if(GetValue('Title', $Poll)
-            || C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
-      echo $Poll->Title;
+/* 	Copyright 2013-2014 Zachary Doll */
+function DPRenderResults($Poll) {
+  $TitleExists = GetValue('Title', $Poll, FALSE);
+  $HideTitle = C('Plugins.DiscussionPolls.DisablePollTitle', FALSE);
+  echo '<div class="DP_ResultsForm">';
+  
+    if($TitleExists || $HideTitle) {
+      $TitleS = $Poll->Title;
       if(trim($Poll->Title) != FALSE) {
-        echo '<hr />';
+        $TitleS .= '<hr />';
       }
     }
     else {
-      echo Wrap(T('Plugins.DiscussionPolls.NotFound', 'Poll not found'), 'span');
+      $TitleS = Wrap(T('Plugins.DiscussionPolls.NotFound', 'Poll not found'));
     }
-    ?>
-    <ol class="DP_ResultQuestions">
-      <?php
-      if(!GetValue('Title', $Poll)
-              && !C('Plugins.DiscussionPolls.DisablePollTitle', FALSE)) {
+    echo $TitleS;
+
+    echo '<ol class="DP_ResultQuestions">';
+      if(!$TitleExists && !$HideTitle) {
         //do nothing
       }
       else if(!count($Poll->Questions)) {
-        echo Wrap(T('Plugins.DiscussionPolls.NoReults', 'No results for this poll'), 'span');
+        echo Wrap(T('Plugins.DiscussionPolls.NoReults', 'No results for this poll'));
       }
       else {
         foreach($Poll->Questions as $Question) {
-          ?>
-          <li class="DP_ResultQuestion">
-            <?php
-            echo Wrap($Question->Title, 'span');
-            echo Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
+          RenderQuestion($Question);
+        }
+      }
+    echo '</ol>';
+  echo '</div>';
+}
 
-            // k is used to have different option bar colors
-            $k = $Question->QuestionID % 10;
-            ?>
-            <ol class="DP_ResultOptions">
-              <?php
-              foreach($Question->Options as $Option) {
-                $String = Wrap($Option->Title, 'div');
-                $Percentage = ($Question->CountResponses == 0) ? '0.00' : number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
-                if($Percentage < 10) {
-                  // put the text on the outside
-                  $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">&nbsp</span> ' . $Percentage . '%';
-                }
-                else {
-                  // put the text on the inside
-                  $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">' . $Percentage . '%</span>';
-                }
+function RenderQuestion($Question) {
+  echo '<li class="DP_ResultQuestion">';
+  echo Wrap($Question->Title, 'span');
+  echo Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
 
-                echo Wrap($String, 'li', array('class' => 'DP_ResultOption'));
-
-                $k++;
-                $k = $k % 10;
-              }
-              ?>
-            </ol>
-          </li>
-      <?php
+  // 'randomize' option bar colors
+  $k = $Question->QuestionID % 10;
+  echo '<ol class="DP_ResultOptions">';
+  foreach($Question->Options as $Option) {
+    $String = Wrap($Option->Title, 'div');
+    $Percentage = ($Question->CountResponses == 0) ? '0.00' : number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
+    // Put text where it makes sense
+    if($Percentage < 10) {
+      $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">&nbsp</span> ' . $Percentage . '%';
     }
+    else {
+      $String .= '<span class="DP_Bar DP_Bar-' . $k . '" style="width: ' . $Percentage . '%;">' . $Percentage . '%</span>';
+    }
+    echo Wrap($String, 'li', array('class' => 'DP_ResultOption'));
+    $k = ++$k % 10;
   }
-  ?>
-    </ol>
-  </div>
-  <?php
+  echo '</ol>';
+  echo '</li>';
 }
