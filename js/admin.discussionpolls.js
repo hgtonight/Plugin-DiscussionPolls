@@ -16,6 +16,11 @@ jQuery(document).ready(function($) {
   var Closed = gdn.definition('DP_Closed'); // This determines if the poll is closed and will be used in future releases
   var QuestionString = gdn.definition('DP_EmptyQuestion'); // This is an empty form question; it is used to sidestep differences between 2.0 and 2.1 form functions
   var ExistingPoll = false; // Is this a pre-existing poll page? Assume it is a new page
+  
+  // Get strings from definition and translated render
+  var NextQString = gdn.definition('DP_NextQuestion');
+  var PrevQString = gdn.definition('DP_PrevQuestion');
+  var AddQString = $('#DP_NextQuestion').text();
 
   // If there is input in the first question textbox onload, this is an existing poll
   if($('#DP_Questions0').val()) {
@@ -25,7 +30,7 @@ jQuery(document).ready(function($) {
       // Hide all but the first question form
       $('fieldset.DP_Question:gt(0)').hide();
 
-      $('#DP_NextQuestion').text('Next Question');
+      $('#DP_NextQuestion').text(NextQString).attr('title', NextQString);
     }
   }
   else {
@@ -112,18 +117,18 @@ jQuery(document).ready(function($) {
       var nextQuestionNum = parseInt(questionNum) + 1;
       if($('#DP_Question' + nextQuestionNum).length === 0) {
         // Don't animate since there isn't another question
-        $('#DP_NextQuestion').text('').css('background-image', 'none');
+        $('#DP_NextQuestion').text('').attr('title', '').css('background-image', 'none');
       }
       else {
         // animate to the next question
         $('#DP_Question' + questionNum).fadeOut(400, function() {
           $('#DP_Question' + nextQuestionNum).fadeIn();
           // Update previous question text
-          $('#DP_PreviousQuestion').text('Previous Question').css('background-image', '');
+          $('#DP_PreviousQuestion').text(PrevQString).attr('title', PrevQString).css('background-image', '');
 
           nextQuestionNum++;
           if($('#DP_Question' + nextQuestionNum).length === 0) {
-            $('#DP_NextQuestion').text('').css('background-image', 'none');
+            $('#DP_NextQuestion').text('').attr('title', '').css('background-image', 'none');
           }
         });
       }
@@ -168,11 +173,11 @@ jQuery(document).ready(function($) {
       $('#DP_Question' + questionNum).fadeOut(400, function() {
         $('#DP_Question' + nextQuestionNum).fadeIn();
         // Update previous question text
-        $('#DP_PreviousQuestion').text('Previous Question').css('background-image', '');
+        $('#DP_PreviousQuestion').text(PrevQString).attr('title', PrevQString).css('background-image', '');
 
         nextQuestionNum++;
         if($('#DP_Question' + nextQuestionNum).length === 0) {
-          $('#DP_NextQuestion').text('Add a Question');
+          $('#DP_NextQuestion').text(AddQString).attr('title', AddQString);
         }
       });
     }
@@ -190,11 +195,11 @@ jQuery(document).ready(function($) {
         $('#DP_Question' + previousQuestionNum).fadeIn();
       });
 
-      $('#DP_NextQuestion').text('Next Question').css('background-image', '');
+      $('#DP_NextQuestion').text(NextQString).attr('title', NextQString).css('background-image', '');
     }
 
     if(previousQuestionNum === 0) {
-      $(this).text(' ').css('background-image', 'none');
+      $(this).text('').attr('title', '').css('background-image', 'none');
     }
   });
 

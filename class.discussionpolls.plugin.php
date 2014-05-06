@@ -232,6 +232,10 @@ class DiscussionPolls extends Gdn_Plugin {
     //get question template for jquery poll expansion
     $DefaultQuestionString = $this->_RenderQuestionFields($Sender->Form, FALSE);
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
+    
+    // Translated definitions
+    $Sender->AddDefinition('DP_NextQuestion', T('Next Question'));
+    $Sender->AddDefinition('DP_PrevQuestion', T('Previous Question'));
   }
 
   /**

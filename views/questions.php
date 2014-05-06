@@ -7,7 +7,7 @@ function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed)
     echo $PollForm->Label('Discussion Poll Title', 'DP_Title');
     echo Wrap($PollForm->TextBox('DP_Title', array_merge($Disabled, array('maxlength' => 100, 'class' => 'InputBox BigInput'))), 'div', array('class' => 'TextBoxWrapper'));
   }
-  echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DP_PreviousQuestion'));
+  echo Anchor(' ', '/plugin/discussionpolls/', array('id' => 'DP_PreviousQuestion', 'title' => T('Previous Question')));
 
   $QuestionCount = 0;
   // set and the form data for existing questions and render a form
@@ -59,11 +59,11 @@ function DiscussionPollQuestionForm($PollForm,$DiscussionPoll,$Disabled,$Closed)
 
   // the end of the form
   if(!$Closed) {
-    echo Anchor('Add a Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
-    echo Anchor('Add an option', '/plugin/discussionpolls/addoption', array('id' => 'DP_AddOption'));
+    echo Anchor(T('Add a Question'), '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion', 'title' => T('Add a Question')));
+    echo Anchor(T('Add an Option'), '/plugin/discussionpolls/addoption', array('id' => 'DP_AddOption', 'title' => T('Add an Option')));
   }
   else if($QuestionCount > 1) {
-    echo Anchor('Next Question', '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion'));
+    echo Anchor(T('Next Question'), '/plugin/discussionpolls/addquestion/', array('id' => 'DP_NextQuestion', 'title' => T('Next Question')));
   }
   ?>
   </div>
