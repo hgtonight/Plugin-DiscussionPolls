@@ -125,6 +125,7 @@ jQuery(document).ready(function($) {
   // hijack the delete click
   $('#DP_Remove a').popup({
     confirm: true,
+    confirmText: ConfirmString,
     followConfirm: false,
     afterConfirm: function(json, sender) {
       // Remove all poll tools and forms
@@ -138,6 +139,5 @@ jQuery(document).ready(function($) {
         $(this).remove();
       });
     }
-  },
-  ConfirmString);
+  });
 });
