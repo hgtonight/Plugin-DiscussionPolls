@@ -305,7 +305,7 @@ class DiscussionPolls extends Gdn_Plugin {
     $Sender->Form->SetValue('DP_Title', $DiscussionPoll->Title);
 
     //render form
-    DiscussionPollQuestionForm($Sender->Form, $DiscussionPoll, $Disabled, $Closed);
+    DPRenderQuestionForm($Sender->Form, $DiscussionPoll, $Disabled, $Closed);
   }
 
   /**
@@ -592,12 +592,12 @@ class DiscussionPolls extends Gdn_Plugin {
     include_once($this->ThemeView('questions'));
 
     if($Echo) {
-      DiscussionPollQuestionFields($PollForm);
+      DPRenderQuestionField($PollForm);
       return TRUE;
     }
     else {
       ob_start();
-      DiscussionPollQuestionFields($PollForm);
+      DPRenderQuestionField($PollForm);
       $Result = ob_get_contents();
       ob_end_clean();
       return $Result;
