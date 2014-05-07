@@ -68,7 +68,7 @@ function DPRenderQuestionField($PollForm, $Index = 0, $Question = NULL, $Disable
 }
 
 function DPRenderOptionField($PollForm, $OIndex = 0, $QIndex = 0, $Option = NULL, $Disabled = array()) {
-  echo $PollForm->Label(sprintf(T('Option #%s'), ($OIndex + 1)), "DP_Options{$QIndex}.{$OIndex}");
+  echo $PollForm->Label(sprintf(T('Option #%d'), ($OIndex + 1)), "DP_Options{$QIndex}.{$OIndex}");
   echo Wrap(
           $PollForm->TextBox(
             "DP_Options{$QIndex}[]",

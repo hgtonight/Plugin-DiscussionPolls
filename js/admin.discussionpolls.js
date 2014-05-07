@@ -78,7 +78,7 @@ jQuery(document).ready(function($) {
       var inputWrapper = $(questionSet).children('.TextBoxWrapper:last').clone();
 
       // find the option number
-      var optionNum = $(label).text().replace(/Option #(\d+)/g, '$1');
+      var optionNum = $(label).text().replace(/(\d+)/g, '$1');
 
       // Change the input id
       $(inputWrapper).children().attr('id', function() {
