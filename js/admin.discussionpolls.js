@@ -78,7 +78,8 @@ jQuery(document).ready(function($) {
       var inputWrapper = $(questionSet).children('.TextBoxWrapper:last').clone();
 
       // find the option number
-      var optionNum = $(label).text().replace(/(\d+)/g, '$1');
+      var optionNum = $(inputWrapper).children().attr('id').replace(/DP_Options\d+\.(\d+)/g, '$1');
+      optionNum++;
 
       // Change the input id
       $(inputWrapper).children().attr('id', function() {
@@ -93,10 +94,10 @@ jQuery(document).ready(function($) {
         return $(this).attr('for').replace(/-dot-(\d+)/, '-dot-' + optionNum);
       });
 
-      optionNum++;
-
       // change the label text
-      $(label).text('Option #' + optionNum);
+      $(label).text(function() {
+        return $(this).text().replace(/(\d+)/, optionNum + 1);
+      });
 
       // prepend the new inputs and slide them in
       $(questionSet).append(label);
