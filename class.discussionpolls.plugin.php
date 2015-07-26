@@ -38,7 +38,7 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function SettingsController_DiscussionPolls_Create($Sender) {
     $Sender->Permission('Garden.Settings.Manage');
-    $Sender->AddCSSFile($this->GetResource('design/settings.discussionpolls.css', FALSE, FALSE));
+    $Sender->AddCSSFile('settings.discussionpolls.css', 'plugins/DiscussionPolls');
 
     $Validation = new Gdn_Validation();
     $ConfigurationModel = new Gdn_ConfigurationModel($Validation);
@@ -203,8 +203,8 @@ class DiscussionPolls extends Gdn_Plugin {
    */
   public function DiscussionController_Render_Before($Sender) {
     // Add poll voting resources
-    $Sender->AddJsFile($this->GetResource('js/discussionpolls.js', FALSE, FALSE));
-    $Sender->AddCSSFile($this->GetResource('design/discussionpolls.css', FALSE, FALSE));
+    $Sender->AddJsFile('discussionpolls.js', 'plugins/DiscussionPolls');
+    $Sender->AddCSSFile('discussionpolls.css', 'plugins/DiscussionPolls');
 
     $Sender->AddDefinition('DP_ShowResults', T('Show Results'));
     $Sender->AddDefinition('DP_ShowForm', T('Show Poll Form'));
@@ -232,8 +232,8 @@ class DiscussionPolls extends Gdn_Plugin {
       return;
     }
     // Add poll creation resources
-    $Sender->AddJsFile($this->GetResource('js/admin.discussionpolls.js', FALSE, FALSE));
-    $Sender->AddCSSFile($this->GetResource('design/admin.discussionpolls.css', FALSE, FALSE));
+    $Sender->AddJsFile('admin.discussionpolls.js', 'plugins/DiscussionPolls');
+    $Sender->AddCSSFile('admin.discussionpolls.css', 'plugins/DiscussionPolls');
     //get question template for jquery poll expansion
     $DefaultQuestionString = $this->_RenderQuestionFields($Sender->Form, FALSE);
     $Sender->AddDefinition('DP_EmptyQuestion', $DefaultQuestionString);
