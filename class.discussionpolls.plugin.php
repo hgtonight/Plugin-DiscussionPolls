@@ -26,7 +26,7 @@ $PluginInfo['DiscussionPolls'] = array(
     'License' => 'GPLv3'
 );
 
-class DiscussionPolls extends Gdn_Plugin {
+class DiscussionPollsPlugin extends Gdn_Plugin {
 
   public function __construct() {
     parent::__construct();
