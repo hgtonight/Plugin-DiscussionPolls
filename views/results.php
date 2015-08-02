@@ -6,7 +6,7 @@ function DPRenderResults($Poll) {
   echo '<div class="DP_ResultsForm">';
   
     if($TitleExists || $HideTitle) {
-      $TitleS = $Poll->Title;
+      $TitleS = Gdn_Format::Text($Poll->Title);
       if(trim($Poll->Title) != FALSE) {
         $TitleS .= '<hr />';
       }
@@ -34,14 +34,14 @@ function DPRenderResults($Poll) {
 
 function RenderQuestion($Question) {
   echo '<li class="DP_ResultQuestion">';
-  echo Wrap($Question->Title, 'span');
+  echo Wrap(Gdn_Format::Text($Question->Title), 'span');
   echo Wrap(sprintf(Plural($Question->CountResponses, '%s vote', '%s votes'), $Question->CountResponses), 'span', array('class' => 'Number DP_VoteCount'));
 
   // 'randomize' option bar colors
   $k = $Question->QuestionID % 10;
   echo '<ol class="DP_ResultOptions">';
   foreach($Question->Options as $Option) {
-    $String = Wrap($Option->Title, 'div');
+    $String = Wrap(Gdn_Format::Text($Option->Title), 'div');
     $Percentage = ($Question->CountResponses == 0) ? '0.00' : number_format(($Option->CountVotes / $Question->CountResponses * 100), 2);
     // Put text where it makes sense
     if($Percentage < 10) {
