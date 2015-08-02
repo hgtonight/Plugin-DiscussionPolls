@@ -18,6 +18,7 @@ $PluginInfo['DiscussionPolls'] = array(
     'Description' => 'A plugin that allows creating polls that attach to a discussion. Respects permissions.',
     'Version' => '1.3.5',
     'RegisterPermissions' => array('Plugins.DiscussionPolls.Add', 'Plugins.DiscussionPolls.View', 'Plugins.DiscussionPolls.Vote', 'Plugins.DiscussionPolls.Manage'),
+    'MobileFriendly' => TRUE,
     'SettingsUrl' => '/dashboard/settings/discussionpolls',
     'SettingsPermission' => 'Garden.Settings.Manage',
     'Author' => 'Zachary Doll',
