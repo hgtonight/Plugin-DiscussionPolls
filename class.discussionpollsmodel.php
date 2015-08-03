@@ -191,7 +191,7 @@ class DiscussionPollsModel extends Gdn_Model {
 
       $this->SQL->Insert('DiscussionPolls', array(
           'DiscussionID' => $FormPostValues['DiscussionID'],
-          'Text' => Gdn_Format::Text($FormPostValues['DP_Title'])));
+          'Text' => $FormPostValues['DP_Title']));
 
       // Select the poll ID
       $this->SQL
@@ -206,7 +206,7 @@ class DiscussionPollsModel extends Gdn_Model {
         $this->SQL
                 ->Insert('DiscussionPollQuestions', array(
                     'PollID' => $PollID,
-                    'Text' => Gdn_Format::Text($Question))
+                    'Text' => $Question)
         );
       }
 
@@ -225,7 +225,7 @@ class DiscussionPollsModel extends Gdn_Model {
                   ->Insert('DiscussionPollQuestionOptions', array(
                       'QuestionID' => $QuestionID->QuestionID,
                       'PollID' => $PollID,
-                      'Text' => Gdn_Format::Text($Option))
+                      'Text' => $Option)
           );
         }
       }
