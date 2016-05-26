@@ -416,8 +416,8 @@ class DiscussionPollsPlugin extends Gdn_Plugin {
       if($DPModel->Exists($DiscussionID)) {
         Gdn::Controller()->InformMessage(T('Plugins.DiscussionPolls.PollRemoved', 'The attached poll has been removed'));
         $DPModel->DeleteByDiscussionID($DiscussionID);
-        return FALSE;
       }
+      return FALSE;
     }
 
     if($DPModel->Exists($DiscussionID)) {
