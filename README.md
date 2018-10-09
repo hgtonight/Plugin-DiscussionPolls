@@ -27,7 +27,7 @@ user to add and remove polls attached to _any_ discussion
 Why can't I attach a poll to my existing discussion?
 ----------------------------------------------------
 If you have the Add permission and you are still unable to attach a poll, your
-forum most likely has an edit time limit. **You mush be able to edit the
+forum most likely has an edit time limit. **You must be able to edit the
 discussion you are attaching the poll to**.
 
 License
