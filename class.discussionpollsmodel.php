@@ -80,7 +80,7 @@ class DiscussionPollsModel extends Gdn_Model {
    * @param int $PollID
    * @return stdClass Poll object
    */
-  public function Get($PollID) {
+  public function GetID($PollID, $DatasetType = false, $Options = []) {
     //check for cached result
     $Data = GetValueR('Get.' . $PollID, self::$Cache);
 
@@ -176,14 +176,14 @@ class DiscussionPollsModel extends Gdn_Model {
         $PollID = NULL;
       }
     }
-    return $this->Get($PollID);
+    return $this->GetID($PollID);
   }
 
   /**
    * Saves the poll object
    * @param array $FormPostValues
    */
-  public function Save($FormPostValues) {
+  public function Save($FormPostValues, $Settings = false) {
     //paranoid
     self::PurgeCache();
     try {
@@ -420,7 +420,7 @@ class DiscussionPollsModel extends Gdn_Model {
         $Answered[$QuestionID] = $FormPostValues[$MemberKey];
       }
     }
-    $Poll = $this->Get($FormPostValues['PollID']);
+    $Poll = $this->GetID($FormPostValues['PollID']);
 
     return count((array) $Poll->Questions) == count($Answered);
   }
@@ -429,7 +429,7 @@ class DiscussionPollsModel extends Gdn_Model {
    * Removes all data associated with the poll id
    * @param int $PollID
    */
-  public function Delete($PollID) {
+  public function DeleteID($PollID, $Options = []) {
     try {
       $this->Database->BeginTransaction();
       $this->SQL->Delete('DiscussionPolls', array('PollID' => $PollID));
@@ -464,7 +464,7 @@ class DiscussionPollsModel extends Gdn_Model {
       $Data = $this->SQL->Get()->FirstRow();
       $PollID = $Data->PollID;
 
-      return $this->Delete($PollID);
+      return $this->DeleteID($PollID);
     }
   }
 

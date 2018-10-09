@@ -148,7 +148,7 @@ class DiscussionPollsPlugin extends Gdn_Plugin {
    */
   public function Controller_Results($Sender) {
     $DPModel = new DiscussionPollsModel();
-    $Poll = $DPModel->Get($Sender->RequestArgs[1]);
+    $Poll = $DPModel->GetID($Sender->RequestArgs[1]);
 
     $PollResults = $this->_RenderResults($Poll, FALSE);
     if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
@@ -172,7 +172,7 @@ class DiscussionPollsPlugin extends Gdn_Plugin {
     $DPModel = new DiscussionPollsModel();
     $DiscussionModel = new DiscussionModel();
 
-    $Poll = $DPModel->Get($Sender->RequestArgs[1]);
+    $Poll = $DPModel->GetID($Sender->RequestArgs[1]);
 
     $Discussion = $DiscussionModel->GetID($Poll->DiscussionID);
 
@@ -180,7 +180,7 @@ class DiscussionPollsPlugin extends Gdn_Plugin {
 
     if($Session->CheckPermission('Plugins.DiscussionPolls.Manage') || $PollOwnerID == $Session->UserID) {
       $DPModel = new DiscussionPollsModel();
-      $DPModel->Delete($Sender->RequestArgs[1]);
+      $DPModel->DeleteID($Sender->RequestArgs[1]);
 
       $Result = 'Removed poll with id ' . $Sender->RequestArgs[1];
       if($Sender->DeliveryType() == DELIVERY_TYPE_VIEW) {
@@ -650,7 +650,7 @@ class DiscussionPollsPlugin extends Gdn_Plugin {
       $View = $ThemeViewLoc . DS . $View . '.php';
     }
     else {
-      $View = $this->GetView($View . '.php');
+      $View = Gdn::controller()->fetchViewLocation($View, '', 'plugins/DiscussionPolls');
     }
 
     return $View;

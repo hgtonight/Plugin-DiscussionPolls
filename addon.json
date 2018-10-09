@@ -1,0 +1,24 @@
+{
+    "name": "Discussion Polls",
+    "description": "A plugin that allows creating polls that attach to a discussion. Respects permissions.",
+    "version": "1.3.6",
+    "registerPermissions": [
+        "Plugins.DiscussionPolls.Add",
+        "Plugins.DiscussionPolls.View",
+        "Plugins.DiscussionPolls.Vote",
+        "Plugins.DiscussionPolls.Manage"
+    ],
+    "mobileFriendly": true,
+    "settingsUrl": "/dashboard/settings/discussionpolls",
+    "settingsPermission": "Garden.Settings.Manage",
+    "license": "GPLv3",
+    "key": "discussionpolls",
+    "type": "addon",
+    "authors": [
+        {
+            "name": "Zachary Doll",
+            "email": "hgtonight@daklutz.com",
+            "homepage": "http://www.daklutz.com"
+        }
+    ]
+}

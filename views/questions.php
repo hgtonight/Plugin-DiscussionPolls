@@ -32,6 +32,12 @@ function DPRenderQuestionForm($PollForm, $DiscussionPoll, $Disabled, $Closed) {
 }
 
 function DPRenderQuestionField($PollForm, $Index = 0, $Question = NULL, $Disabled = array()) {
+  // Gdn_Form has static $idCounters. Re-use the empty question field from definitions to circumvent wrong (incremented) IDs.
+  $definition = Gdn::controller()->AddDefinition('DP_EmptyQuestion');
+  if(is_null($Question) && $definition) {
+      echo $definition;
+      return;
+  }
   echo '<fieldset id="DP_Question' . $Index . '" class="DP_Question">';
     echo $PollForm->Label(sprintf(T('Question #%d'), ($Index + 1)), "DP_Questions{$Index}");
     echo Wrap(
